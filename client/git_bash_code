@@ -6,6 +6,3 @@ git show --name-only
 
 直前のコミットファイルをaddの状態に戻す
 git reset --soft HEAD^
-
-間違えてpushしたファイルをpush前のステータスに戻したい
-git checkout HEAD^ -- ファイル名
