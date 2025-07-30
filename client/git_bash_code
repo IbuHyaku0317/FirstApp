@@ -1,0 +1,8 @@
+add前の状態に戻したい場合
+git reset
+
+コミット内容を確認するコマンド
+git show --name-only
+
+直前のコミットファイルをaddの状態に戻す
+git reset --soft HEAD^
