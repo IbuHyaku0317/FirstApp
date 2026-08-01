@@ -1,0 +1,11 @@
+<Solution>
+  <Folder Name="/src/api/">
+    <Project Path="src/api/Memory.Domain/Memory.Domain.csproj" />
+    <Project Path="src/api/Memory.Application/Memory.Application.csproj" />
+    <Project Path="src/api/Memory.Infrastructure/Memory.Infrastructure.csproj" />
+    <Project Path="src/api/Memory.Api/Memory.Api.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Memory.UnitTests/Memory.UnitTests.csproj" />
+  </Folder>
+</Solution>

@@ -27,3 +27,14 @@ bin/
 
 ### Mac OS ###
 .DS_Store
+
+### .NET / new web app ###
+**/bin/
+**/obj/
+**/node_modules/
+**/dist/
+**/*.tsbuildinfo
+**/*.log
+.pnpm-store/
+.env
+src/api/Memory.Api/App_Data/
