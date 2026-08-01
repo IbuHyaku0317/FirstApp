@@ -36,6 +36,7 @@ public interface ITokenService
     Task<AuthResult> IssueAsync(User user, string? device, CancellationToken ct);
     Task<AuthResult?> RotateAsync(string rawToken, CancellationToken ct);
     Task RevokeAsync(string rawToken, CancellationToken ct);
+    Task RevokeAllAsync(Guid userId, CancellationToken ct);
 }
 public interface IMediaStorage
 {

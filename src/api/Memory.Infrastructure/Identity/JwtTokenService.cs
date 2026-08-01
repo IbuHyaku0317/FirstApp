@@ -44,6 +44,12 @@ public sealed class JwtTokenService(MemoryDbContext db, IConfiguration config) :
         token.Revoke();
         await db.SaveChangesAsync(ct);
     }
+    public async Task RevokeAllAsync(Guid userId, CancellationToken ct)
+    {
+        var active = await db.RefreshTokens.Where(x => x.UserId == userId && x.RevokedAt == null).ToListAsync(ct);
+        foreach (var token in active) token.Revoke();
+        await db.SaveChangesAsync(ct);
+    }
     private AuthResult CreateAccessToken(User user, string refreshToken)
     {
         var now = DateTimeOffset.UtcNow;

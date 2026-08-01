@@ -16,6 +16,8 @@ public static class AuthEndpoints
         auth.MapPost("/logout", LogoutAsync);
         routes.MapGet("/me", async (ClaimsPrincipal principal, AuthApplicationService service, CancellationToken ct) =>
             await service.GetUserAsync(EndpointSupport.UserId(principal), ct) is { } user ? Results.Ok(user) : Results.NotFound()).RequireAuthorization();
+        routes.MapMethods("/me", ["PATCH"], UpdateProfileAsync).RequireAuthorization();
+        routes.MapDelete("/me", DeleteAccountAsync).RequireAuthorization();
         routes.MapPut("/me/anniversary", SetAnniversaryAsync).RequireAuthorization();
         routes.MapGet("/me/anniversary/change-impact", async (ClaimsPrincipal principal, AnniversaryApplicationService service, CancellationToken ct) =>
             Results.Ok(new { affectedLockedSecondPosts = await service.ChangeImpactAsync(EndpointSupport.UserId(principal), ct) })).RequireAuthorization();
@@ -77,8 +79,23 @@ public static class AuthEndpoints
         catch (ArgumentException) { return Results.ValidationProblem(new Dictionary<string, string[]> { ["anniversary"] = [EndpointSupport.Text(http, "正しい記念日を入力してください。", "Enter a valid anniversary.")] }); }
     }
 
+    private static async Task<IResult> UpdateProfileAsync([FromBody] UpdateProfileRequest request, ClaimsPrincipal principal, AuthApplicationService service, HttpContext http, CancellationToken ct)
+    {
+        try { return Results.Ok(await service.UpdateProfileAsync(EndpointSupport.UserId(principal), request.DisplayName, request.PreferredLanguage, request.Timezone, ct)); }
+        catch (BusinessRuleException exception) { return EndpointSupport.BusinessProblem(http, exception); }
+        catch (TimeZoneNotFoundException) { return Results.ValidationProblem(new Dictionary<string, string[]> { ["timezone"] = [EndpointSupport.Text(http, "タイムゾーンが正しくありません。", "The timezone is invalid.")] }); }
+        catch (ArgumentException) { return Results.ValidationProblem(new Dictionary<string, string[]> { ["profile"] = [EndpointSupport.Text(http, "プロフィールの入力内容を確認してください。", "Check your profile information.")] }); }
+    }
+
+    private static async Task<IResult> DeleteAccountAsync(ClaimsPrincipal principal, AuthApplicationService service, HttpContext http, CancellationToken ct)
+    {
+        try { await service.DeleteAccountAsync(EndpointSupport.UserId(principal), ct); EndpointSupport.DeleteRefreshCookie(http); return Results.NoContent(); }
+        catch (BusinessRuleException exception) { return EndpointSupport.BusinessProblem(http, exception); }
+    }
+
     private sealed record RegisterRequest(string DisplayName, string Email, string Password, string? Timezone, string? PreferredLanguage, string? Device);
     private sealed record LoginRequest(string Email, string Password, string? Device);
     private sealed record TokenRequest(string? RefreshToken);
     private sealed record AnniversaryRequest(string? Name, int? Month, int? Day, bool Skip = false);
+    private sealed record UpdateProfileRequest(string DisplayName, string PreferredLanguage, string Timezone);
 }

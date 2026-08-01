@@ -28,6 +28,23 @@ public sealed class AuthApplicationService(IUserRepository users, IAnniversaryRe
     public async Task<UserDto?> GetUserAsync(Guid userId, CancellationToken ct) =>
         await users.FindByIdAsync(userId, ct) is { } user ? await MapAsync(user, ct) : null;
 
+    public async Task<UserDto> UpdateProfileAsync(Guid userId, string displayName, string preferredLanguage, string timezone, CancellationToken ct)
+    {
+        var user = await users.FindByIdAsync(userId, ct) ?? throw new BusinessRuleException("USER_NOT_FOUND", "User not found.");
+        _ = UserLocalDate(DateTimeOffset.UtcNow, timezone);
+        user.UpdateProfile(displayName, preferredLanguage, timezone, DateTimeOffset.UtcNow);
+        await unitOfWork.SaveChangesAsync(ct);
+        return await MapAsync(user, ct);
+    }
+
+    public async Task DeleteAccountAsync(Guid userId, CancellationToken ct)
+    {
+        var user = await users.FindByIdAsync(userId, ct) ?? throw new BusinessRuleException("USER_NOT_FOUND", "User not found.");
+        user.RequestDeletion(DateTimeOffset.UtcNow);
+        await tokens.RevokeAllAsync(userId, ct);
+        await unitOfWork.SaveChangesAsync(ct);
+    }
+
     public async Task<UserDto> MapAsync(User user, CancellationToken ct)
     {
         var setting = await anniversaries.FindCurrentAsync(user.Id, ct);

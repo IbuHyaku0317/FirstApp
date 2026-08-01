@@ -52,4 +52,20 @@ public sealed class User
         }
         UpdatedAt = now;
     }
+
+    public void UpdateProfile(string displayName, string preferredLanguage, string timezone, DateTimeOffset now)
+    {
+        if (string.IsNullOrWhiteSpace(displayName) || displayName.Trim().Length > 80)
+            throw new ArgumentException("Display name is required and must be 80 characters or fewer.", nameof(displayName));
+        DisplayName = displayName.Trim();
+        PreferredLanguage = preferredLanguage is "en" ? "en" : "ja";
+        Timezone = timezone;
+        UpdatedAt = now;
+    }
+
+    public void RequestDeletion(DateTimeOffset now)
+    {
+        DeletedAt = now;
+        UpdatedAt = now;
+    }
 }
