@@ -72,7 +72,18 @@ public static class PostEndpoints
         var now = clock.UtcNow;
         var visibleOn = AuthApplicationService.UserLocalDate(now, user.Timezone);
         if (!await posts.CanReadStorageKeyAsync(userId, key, visibleOn, now, ct)) return Results.NotFound();
-        try { return Results.Stream(await storage.OpenReadAsync(key, ct)); }
+        try
+        {
+            var contentType = Path.GetExtension(key).ToLowerInvariant() switch
+            {
+                ".jpg" or ".jpeg" => "image/jpeg",
+                ".png" => "image/png",
+                ".webp" => "image/webp",
+                ".mp4" => "video/mp4",
+                _ => "application/octet-stream",
+            };
+            return Results.Stream(await storage.OpenReadAsync(key, ct), contentType);
+        }
         catch (FileNotFoundException) { return Results.NotFound(); }
     }
 }

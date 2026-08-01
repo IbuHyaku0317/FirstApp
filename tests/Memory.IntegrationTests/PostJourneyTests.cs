@@ -80,6 +80,10 @@ public sealed class PostJourneyTests : IAsyncLifetime
         var unlocked = await http.GetFromJsonAsync<JsonElement>($"/api/v1/calendar/{occurredOn.AddYears(1):yyyy-MM-dd}");
         Assert.Equal(1, unlocked.GetArrayLength());
         Assert.Equal("A memory under test", unlocked[0].GetProperty("caption").GetString());
+        var mediaUrl = unlocked[0].GetProperty("media")[0].GetProperty("url").GetString();
+        using var media = await http.GetAsync(mediaUrl);
+        media.EnsureSuccessStatusCode();
+        Assert.Equal("image/jpeg", media.Content.Headers.ContentType?.MediaType);
     }
 
     [Fact]

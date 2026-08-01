@@ -23,27 +23,30 @@ async function request<T>(path: string, init: RequestInit = {}, session?: Sessio
   if (!(init.body instanceof FormData)) headers.set("Content-Type", "application/json");
   const response = await fetch(`${apiBaseUrl}${path}`, { ...init, headers });
   if (response.status === 401 && retry && session?.refreshToken && path !== "/auth/refresh") {
-    const refreshed = await request<{ accessToken: string; refreshToken: string }>("/auth/refresh", {
-      method: "POST",
-      body: JSON.stringify({ refreshToken: session.refreshToken }),
-    }, undefined, false);
-    session.accessToken = refreshed.accessToken;
-    session.refreshToken = refreshed.refreshToken;
-    await sessionStore.save(session);
+    await refreshMobileSession(session);
     return request<T>(path, init, session, false);
   }
   if (!response.ok) throw new Error(await parseError(response));
   return response.status === 204 ? undefined as T : response.json() as Promise<T>;
 }
 
+let sessionRefresh: Promise<void> | null = null;
+
 async function refreshMobileSession(session: Session) {
-  if (!session.refreshToken) throw new Error("Session expired.");
-  const refreshed = await request<{ accessToken: string; refreshToken: string }>("/auth/refresh", {
-    method: "POST", body: JSON.stringify({ refreshToken: session.refreshToken }),
-  }, undefined, false);
-  session.accessToken = refreshed.accessToken;
-  session.refreshToken = refreshed.refreshToken;
-  await sessionStore.save(session);
+  // 複数画面が同時に401を受けても、ローテーション式リフレッシュトークンを
+  // 二重使用しないよう、進行中の更新処理を全リクエストで共有する。
+  if (sessionRefresh) return sessionRefresh;
+  sessionRefresh = (async () => {
+    if (!session.refreshToken) throw new Error("Session expired.");
+    const refreshed = await request<{ accessToken: string; refreshToken: string }>("/auth/refresh", {
+      method: "POST", body: JSON.stringify({ refreshToken: session.refreshToken }),
+    }, undefined, false);
+    session.accessToken = refreshed.accessToken;
+    session.refreshToken = refreshed.refreshToken;
+    await sessionStore.save(session);
+  })();
+  try { await sessionRefresh; }
+  finally { sessionRefresh = null; }
 }
 
 function uploadPost(session: Session, data: FormData, onProgress: (percent: number) => void, signal?: AbortSignal, retry = true): Promise<Post> {
