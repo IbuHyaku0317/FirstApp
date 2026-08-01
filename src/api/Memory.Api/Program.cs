@@ -12,7 +12,7 @@ var signingKey = jwt["SigningKey"] ?? throw new InvalidOperationException("Jwt:S
 builder.Services.AddProblemDetails();
 // Composition Root: 内側のApplicationと外側のInfrastructureをここでのみ組み合わせる。
 builder.Services.AddApplication();
-builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddInfrastructure(builder.Configuration, builder.Environment.IsDevelopment());
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(options => options.TokenValidationParameters = new()
 {
     ValidIssuer = jwt["Issuer"],
@@ -54,5 +54,9 @@ app.UseAuthorization();
 var api = app.MapGroup("/api/v1");
 api.MapAuthEndpoints();
 api.MapPostEndpoints();
+if (app.Environment.IsDevelopment()) api.MapDevelopmentEndpoints();
 api.MapGet("/health", () => Results.Ok(new { status = "ok" }));
 app.Run();
+
+// WebApplicationFactoryからAPI全体を起動する統合テストで参照します。
+public partial class Program;

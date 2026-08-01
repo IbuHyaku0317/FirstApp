@@ -34,7 +34,8 @@
           "cameraPermission": "一年後の思い出として保存する写真を撮影するために使用します。",
           "microphonePermission": false
         }
-      ]
+      ],
+      "expo-video"
     ]
   }
 }

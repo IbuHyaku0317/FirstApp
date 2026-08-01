@@ -63,13 +63,13 @@ public static class PostEndpoints
     private static async Task<IResult> ListAsync(int? limit, string? cursor, ClaimsPrincipal principal, PostApplicationService service, CancellationToken ct) => Results.Ok(await service.ListAsync(EndpointSupport.UserId(principal), limit ?? 20, cursor, ct));
     private static async Task<IResult> CalendarAsync(int year, int month, ClaimsPrincipal principal, PostApplicationService service, CancellationToken ct) => month is < 1 or > 12 ? Results.BadRequest() : Results.Ok(await service.CalendarAsync(EndpointSupport.UserId(principal), year, month, ct));
     private static async Task<IResult> CalendarDayAsync(string date, ClaimsPrincipal principal, PostApplicationService service, CancellationToken ct) => DateOnly.TryParse(date, out var parsed) ? Results.Ok(await service.CalendarDayAsync(EndpointSupport.UserId(principal), parsed, ct)) : Results.BadRequest();
-    private static async Task<IResult> MemoriesAsync(DateOnly? date, ClaimsPrincipal principal, PostApplicationService service, CancellationToken ct) => Results.Ok(await service.CalendarDayAsync(EndpointSupport.UserId(principal), date ?? DateOnly.FromDateTime(DateTime.UtcNow), ct));
-    private static async Task<IResult> OpenMediaAsync(string key, ClaimsPrincipal principal, IUserRepository users, IPostRepository posts, IMediaStorage storage, CancellationToken ct)
+    private static async Task<IResult> MemoriesAsync(DateOnly? date, ClaimsPrincipal principal, PostApplicationService service, IAppClock clock, CancellationToken ct) => Results.Ok(await service.CalendarDayAsync(EndpointSupport.UserId(principal), date ?? DateOnly.FromDateTime(clock.UtcNow.UtcDateTime), ct));
+    private static async Task<IResult> OpenMediaAsync(string key, ClaimsPrincipal principal, IUserRepository users, IPostRepository posts, IMediaStorage storage, IAppClock clock, CancellationToken ct)
     {
         var userId = EndpointSupport.UserId(principal);
         var user = await users.FindByIdAsync(userId, ct);
         if (user is null) return Results.NotFound();
-        var now = DateTimeOffset.UtcNow;
+        var now = clock.UtcNow;
         var visibleOn = AuthApplicationService.UserLocalDate(now, user.Timezone);
         if (!await posts.CanReadStorageKeyAsync(userId, key, visibleOn, now, ct)) return Results.NotFound();
         try { return Results.Stream(await storage.OpenReadAsync(key, ct)); }

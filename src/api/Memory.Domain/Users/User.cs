@@ -5,7 +5,7 @@ public sealed class User
 {
     private User() { }
 
-    public User(string displayName, string email, string normalizedEmail, string timezone, string preferredLanguage = "ja")
+    public User(string displayName, string email, string normalizedEmail, string timezone, string preferredLanguage = "ja", DateTimeOffset? now = null)
     {
         Id = Guid.NewGuid();
         DisplayName = displayName;
@@ -14,7 +14,7 @@ public sealed class User
         Timezone = timezone;
         PreferredLanguage = preferredLanguage is "en" ? "en" : "ja";
         PasswordHash = "pending";
-        CreatedAt = UpdatedAt = DateTimeOffset.UtcNow;
+        CreatedAt = UpdatedAt = now ?? DateTimeOffset.UtcNow;
     }
 
     public Guid Id { get; private init; }

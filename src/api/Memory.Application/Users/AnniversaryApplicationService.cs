@@ -2,21 +2,21 @@ using Memory.Domain;
 
 namespace Memory.Application;
 
-public sealed class AnniversaryApplicationService(IUserRepository users, IAnniversaryRepository anniversaries, IPostRepository posts, IUnitOfWork unitOfWork, AuthApplicationService auth)
+public sealed class AnniversaryApplicationService(IUserRepository users, IAnniversaryRepository anniversaries, IPostRepository posts, IUnitOfWork unitOfWork, AuthApplicationService auth, IAppClock clock)
 {
     public async Task<int> ChangeImpactAsync(Guid userId, CancellationToken ct)
     {
         var user = await users.FindByIdAsync(userId, ct) ?? throw new BusinessRuleException("USER_NOT_FOUND", "User not found.");
         var current = await anniversaries.FindCurrentAsync(userId, ct);
         if (current is null) return 0;
-        var today = AuthApplicationService.UserLocalDate(DateTimeOffset.UtcNow, user.Timezone);
+        var today = AuthApplicationService.UserLocalDate(clock.UtcNow, user.Timezone);
         return (await posts.LockedSecondPostsAsync(userId, current.Id, today, ct)).Count;
     }
 
     public async Task<UserDto> SetAsync(Guid userId, string? name, int? month, int? day, bool skip, CancellationToken ct)
     {
         var user = await users.FindByIdAsync(userId, ct) ?? throw new BusinessRuleException("USER_NOT_FOUND", "User not found.");
-        var now = DateTimeOffset.UtcNow;
+        var now = clock.UtcNow;
         var today = AuthApplicationService.UserLocalDate(now, user.Timezone);
         var current = await anniversaries.FindCurrentAsync(userId, ct);
 

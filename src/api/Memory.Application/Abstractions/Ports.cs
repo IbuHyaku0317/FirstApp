@@ -30,6 +30,12 @@ public interface IPostRepository
 }
 
 public interface IUnitOfWork { Task SaveChangesAsync(CancellationToken ct); }
+public interface IAppClock
+{
+    DateTimeOffset UtcNow { get; }
+    bool IsAdjustable { get; }
+    void SetUtcNow(DateTimeOffset? utcNow);
+}
 public interface IPasswordService { string Hash(User user, string password); bool Verify(User user, string password); }
 public interface ITokenService
 {

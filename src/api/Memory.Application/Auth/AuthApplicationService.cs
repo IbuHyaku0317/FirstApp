@@ -2,14 +2,14 @@ using Memory.Domain;
 
 namespace Memory.Application;
 
-public sealed class AuthApplicationService(IUserRepository users, IAnniversaryRepository anniversaries, IPasswordService passwords, ITokenService tokens, IUnitOfWork unitOfWork)
+public sealed class AuthApplicationService(IUserRepository users, IAnniversaryRepository anniversaries, IPasswordService passwords, ITokenService tokens, IUnitOfWork unitOfWork, IAppClock clock)
 {
     public async Task<AuthenticatedUserDto?> RegisterAsync(string displayName, string email, string password, string timezone, string preferredLanguage, string? device, CancellationToken ct)
     {
         var normalizedEmail = email.Trim().ToLowerInvariant();
         if (await users.EmailExistsAsync(normalizedEmail, ct)) return null;
-        _ = UserLocalDate(DateTimeOffset.UtcNow, timezone);
-        var user = new User(displayName.Trim(), normalizedEmail, normalizedEmail, timezone, preferredLanguage);
+        _ = UserLocalDate(clock.UtcNow, timezone);
+        var user = new User(displayName.Trim(), normalizedEmail, normalizedEmail, timezone, preferredLanguage, clock.UtcNow);
         user.SetPasswordHash(passwords.Hash(user, password));
         users.Add(user);
         await unitOfWork.SaveChangesAsync(ct);
@@ -31,8 +31,8 @@ public sealed class AuthApplicationService(IUserRepository users, IAnniversaryRe
     public async Task<UserDto> UpdateProfileAsync(Guid userId, string displayName, string preferredLanguage, string timezone, CancellationToken ct)
     {
         var user = await users.FindByIdAsync(userId, ct) ?? throw new BusinessRuleException("USER_NOT_FOUND", "User not found.");
-        _ = UserLocalDate(DateTimeOffset.UtcNow, timezone);
-        user.UpdateProfile(displayName, preferredLanguage, timezone, DateTimeOffset.UtcNow);
+        _ = UserLocalDate(clock.UtcNow, timezone);
+        user.UpdateProfile(displayName, preferredLanguage, timezone, clock.UtcNow);
         await unitOfWork.SaveChangesAsync(ct);
         return await MapAsync(user, ct);
     }
@@ -40,7 +40,7 @@ public sealed class AuthApplicationService(IUserRepository users, IAnniversaryRe
     public async Task DeleteAccountAsync(Guid userId, CancellationToken ct)
     {
         var user = await users.FindByIdAsync(userId, ct) ?? throw new BusinessRuleException("USER_NOT_FOUND", "User not found.");
-        user.RequestDeletion(DateTimeOffset.UtcNow);
+        user.RequestDeletion(clock.UtcNow);
         await tokens.RevokeAllAsync(userId, ct);
         await unitOfWork.SaveChangesAsync(ct);
     }

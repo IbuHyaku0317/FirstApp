@@ -8,7 +8,7 @@ namespace Memory.Infrastructure;
 public static class DependencyInjection
 {
     /// <summary>Infrastructureの実装をApplicationで定義されたポートへ結び付ける。</summary>
-    public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration, bool isDevelopment = false)
     {
         services.Configure<MediaOptions>(configuration.GetSection("Media"));
         services.AddDbContext<MemoryDbContext>(options => options.UseNpgsql(configuration.GetConnectionString("Database")));
@@ -20,6 +20,7 @@ public static class DependencyInjection
         services.AddScoped<IPasswordService, PasswordService>();
         services.AddScoped<ITokenService, JwtTokenService>();
         services.AddScoped<IMediaStorage, LocalMediaStorage>();
+        services.AddSingleton<IAppClock>(new AppClock(isDevelopment));
         return services;
     }
 }

@@ -6,6 +6,9 @@ public sealed class Post
     private Post() { }
 
     public Post(Guid userId, string? caption, DateOnly occurredOn, int dailySequence = 1, Guid? anniversarySettingId = null)
+        : this(userId, caption, occurredOn, DateTimeOffset.UtcNow, dailySequence, anniversarySettingId) { }
+
+    public Post(Guid userId, string? caption, DateOnly occurredOn, DateTimeOffset now, int dailySequence = 1, Guid? anniversarySettingId = null)
     {
         if (dailySequence is < 1 or > 2) throw new ArgumentOutOfRangeException(nameof(dailySequence));
         Id = Guid.NewGuid();
@@ -15,7 +18,7 @@ public sealed class Post
         UnlockOn = AnniversaryPolicy.DateNextYear(occurredOn);
         DailySequence = dailySequence;
         AnniversarySettingId = anniversarySettingId;
-        CreatedAt = UpdatedAt = DateTimeOffset.UtcNow;
+        CreatedAt = UpdatedAt = now;
         CancelableUntil = CreatedAt.AddMinutes(10);
     }
 
@@ -52,9 +55,12 @@ public sealed class MediaAsset
 {
     private MediaAsset() { }
     public MediaAsset(Guid postId, MediaKind kind, string storageKey, string contentType, long byteSize)
+        : this(postId, kind, storageKey, contentType, byteSize, DateTimeOffset.UtcNow) { }
+
+    public MediaAsset(Guid postId, MediaKind kind, string storageKey, string contentType, long byteSize, DateTimeOffset now)
     {
         Id = Guid.NewGuid(); PostId = postId; Kind = kind; StorageKey = storageKey;
-        ContentType = contentType; ByteSize = byteSize; CreatedAt = DateTimeOffset.UtcNow;
+        ContentType = contentType; ByteSize = byteSize; CreatedAt = now;
     }
     public Guid Id { get; private init; }
     public Guid PostId { get; private init; }

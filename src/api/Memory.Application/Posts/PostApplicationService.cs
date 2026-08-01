@@ -4,12 +4,13 @@ using Memory.Domain;
 namespace Memory.Application;
 
 /// <summary>投稿枠、解禁、取消、カレンダー表示を調整するユースケース。</summary>
-public sealed class PostApplicationService(IPostRepository posts, IUserRepository users, IAnniversaryRepository anniversaries, IUnitOfWork unitOfWork, IMediaStorage storage)
+public sealed class PostApplicationService(IPostRepository posts, IUserRepository users, IAnniversaryRepository anniversaries, IUnitOfWork unitOfWork, IMediaStorage storage, IAppClock clock)
 {
     public async Task<PostDto> CreateAsync(CreatePostCommand command, CancellationToken ct)
     {
         var user = await users.FindByIdAsync(command.UserId, ct) ?? throw new BusinessRuleException("USER_NOT_FOUND", "User not found.");
-        var today = AuthApplicationService.UserLocalDate(DateTimeOffset.UtcNow, user.Timezone);
+        var now = clock.UtcNow;
+        var today = AuthApplicationService.UserLocalDate(now, user.Timezone);
         var anniversary = await anniversaries.FindCurrentAsync(user.Id, ct);
         var isAnniversary = anniversary?.IsOn(today) == true;
         var used = await posts.CountOnAsync(user.Id, today, ct);
@@ -22,8 +23,8 @@ public sealed class PostApplicationService(IPostRepository posts, IUserRepositor
         var stored = await storage.PutAsync(command.Content, command.ContentType, command.Extension, ct);
         try
         {
-            var post = new Post(user.Id, command.Caption, today, used + 1, isAnniversary ? anniversary!.Id : null);
-            post.AddMedia(new MediaAsset(post.Id, kind, stored.StorageKey, command.ContentType, stored.ByteSize));
+            var post = new Post(user.Id, command.Caption, today, now, used + 1, isAnniversary ? anniversary!.Id : null);
+            post.AddMedia(new MediaAsset(post.Id, kind, stored.StorageKey, command.ContentType, stored.ByteSize, now));
             posts.Add(post);
             await unitOfWork.SaveChangesAsync(ct);
             return await MapAsync(post, includeContent: true, ct);
@@ -38,7 +39,7 @@ public sealed class PostApplicationService(IPostRepository posts, IUserRepositor
     public async Task<TodayStatusDto> TodayStatusAsync(Guid userId, CancellationToken ct)
     {
         var user = await users.FindByIdAsync(userId, ct) ?? throw new BusinessRuleException("USER_NOT_FOUND", "User not found.");
-        var now = DateTimeOffset.UtcNow;
+        var now = clock.UtcNow;
         var today = AuthApplicationService.UserLocalDate(now, user.Timezone);
         var anniversary = await anniversaries.FindCurrentAsync(userId, ct);
         var isAnniversary = anniversary?.IsOn(today) == true;
@@ -53,7 +54,7 @@ public sealed class PostApplicationService(IPostRepository posts, IUserRepositor
     public async Task<PageDto<PostDto>> ListAsync(Guid userId, int limit, string? cursor, CancellationToken ct)
     {
         var user = await users.FindByIdAsync(userId, ct) ?? throw new BusinessRuleException("USER_NOT_FOUND", "User not found.");
-        var visibleOn = AuthApplicationService.UserLocalDate(DateTimeOffset.UtcNow, user.Timezone);
+        var visibleOn = AuthApplicationService.UserLocalDate(clock.UtcNow, user.Timezone);
         var take = Math.Clamp(limit, 1, 50);
         var decoded = DecodeCursor(cursor);
         var rows = (await posts.ListAsync(userId, visibleOn, take + 1, decoded?.Time, decoded?.Id, ct)).ToList();
@@ -69,7 +70,7 @@ public sealed class PostApplicationService(IPostRepository posts, IUserRepositor
         var user = await users.FindByIdAsync(userId, ct);
         var post = await posts.FindOwnedAsync(postId, userId, ct);
         if (user is null || post is null) return null;
-        var today = AuthApplicationService.UserLocalDate(DateTimeOffset.UtcNow, user.Timezone);
+        var today = AuthApplicationService.UserLocalDate(clock.UtcNow, user.Timezone);
         if (post.UnlockOn > today || post.SuppressionReason is not null) return null;
         return await MapAsync(post, true, ct);
     }
@@ -78,8 +79,9 @@ public sealed class PostApplicationService(IPostRepository posts, IUserRepositor
     {
         var post = await posts.FindOwnedAsync(postId, userId, ct);
         if (post is null) return false;
-        if (!post.CanCancel(DateTimeOffset.UtcNow)) throw new BusinessRuleException("POST_CANCEL_WINDOW_ENDED", "The 10-minute cancellation period has ended.");
-        post.Cancel(DateTimeOffset.UtcNow);
+        var now = clock.UtcNow;
+        if (!post.CanCancel(now)) throw new BusinessRuleException("POST_CANCEL_WINDOW_ENDED", "The 10-minute cancellation period has ended.");
+        post.Cancel(now);
         await unitOfWork.SaveChangesAsync(ct);
         return true;
     }
@@ -87,7 +89,7 @@ public sealed class PostApplicationService(IPostRepository posts, IUserRepositor
     public async Task<IReadOnlyList<CalendarDayDto>> CalendarAsync(Guid userId, int year, int month, CancellationToken ct)
     {
         var user = await users.FindByIdAsync(userId, ct) ?? throw new BusinessRuleException("USER_NOT_FOUND", "User not found.");
-        var visibleOn = AuthApplicationService.UserLocalDate(DateTimeOffset.UtcNow, user.Timezone);
+        var visibleOn = AuthApplicationService.UserLocalDate(clock.UtcNow, user.Timezone);
         var start = new DateOnly(year, month, 1);
         return await posts.CalendarAsync(userId, start, start.AddMonths(1), visibleOn, ct);
     }
@@ -95,7 +97,7 @@ public sealed class PostApplicationService(IPostRepository posts, IUserRepositor
     public async Task<IReadOnlyList<PostDto>> CalendarDayAsync(Guid userId, DateOnly date, CancellationToken ct)
     {
         var user = await users.FindByIdAsync(userId, ct) ?? throw new BusinessRuleException("USER_NOT_FOUND", "User not found.");
-        var today = AuthApplicationService.UserLocalDate(DateTimeOffset.UtcNow, user.Timezone);
+        var today = AuthApplicationService.UserLocalDate(clock.UtcNow, user.Timezone);
         if (date > today) return [];
         var result = new List<PostDto>();
         foreach (var row in await posts.OnUnlockDateAsync(userId, date, ct)) result.Add(await MapAsync(row, true, ct));

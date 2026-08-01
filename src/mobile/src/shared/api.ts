@@ -9,6 +9,7 @@ export const resolveMediaUrl = (url: string) => url.startsWith("http") ? url : `
 
 type Problem = { detail?: string; title?: string; errors?: Record<string, string[]> };
 type AuthResponse = { accessToken: string; refreshToken?: string; user: User };
+export type DevelopmentClock = { utcNow: string; adjustable: boolean };
 
 async function parseError(response: Response) {
   const problem = await response.json().catch(() => ({} as Problem)) as Problem;
@@ -35,6 +36,42 @@ async function request<T>(path: string, init: RequestInit = {}, session?: Sessio
   return response.status === 204 ? undefined as T : response.json() as Promise<T>;
 }
 
+async function refreshMobileSession(session: Session) {
+  if (!session.refreshToken) throw new Error("Session expired.");
+  const refreshed = await request<{ accessToken: string; refreshToken: string }>("/auth/refresh", {
+    method: "POST", body: JSON.stringify({ refreshToken: session.refreshToken }),
+  }, undefined, false);
+  session.accessToken = refreshed.accessToken;
+  session.refreshToken = refreshed.refreshToken;
+  await sessionStore.save(session);
+}
+
+function uploadPost(session: Session, data: FormData, onProgress: (percent: number) => void, signal?: AbortSignal, retry = true): Promise<Post> {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", `${apiBaseUrl}/posts`);
+    xhr.setRequestHeader("Authorization", `Bearer ${session.accessToken}`);
+    xhr.setRequestHeader("Accept-Language", session.user.preferredLanguage);
+    xhr.upload.onprogress = event => { if (event.lengthComputable) onProgress(Math.round(event.loaded / event.total * 100)); };
+    xhr.onerror = () => reject(new Error("Communication failed. Please try again."));
+    xhr.onabort = () => reject(new Error("UPLOAD_CANCELED"));
+    xhr.onload = async () => {
+      if (xhr.status === 401 && retry && session.refreshToken) {
+        try { await refreshMobileSession(session); resolve(await uploadPost(session, data, onProgress, signal, false)); }
+        catch (error) { reject(error); }
+        return;
+      }
+      let body: unknown = undefined;
+      try { body = xhr.responseText ? JSON.parse(xhr.responseText) : undefined; } catch { body = undefined; }
+      if (xhr.status >= 200 && xhr.status < 300) { onProgress(100); resolve(body as Post); return; }
+      const problem = body as Problem | undefined;
+      reject(new Error(problem?.detail ?? Object.values(problem?.errors ?? {}).flat()[0] ?? problem?.title ?? `Upload failed (${xhr.status})`));
+    };
+    signal?.addEventListener("abort", () => xhr.abort(), { once: true });
+    xhr.send(data);
+  });
+}
+
 export const api = {
   register: (displayName: string, email: string, password: string, language: Language) => request<AuthResponse>("/auth/register", { method: "POST", body: JSON.stringify({ displayName, email, password, timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "Asia/Tokyo", preferredLanguage: language, device: `android` }) }),
   login: (email: string, password: string) => request<AuthResponse>("/auth/login", { method: "POST", body: JSON.stringify({ email, password, device: "android" }) }),
@@ -47,6 +84,9 @@ export const api = {
   calendar: (session: Session, year: number, month: number) => request<CalendarDay[]>(`/calendar/${year}/${month}`, {}, session),
   day: (session: Session, date: string) => request<Post[]>(`/calendar/${date}`, {}, session),
   todayStatus: (session: Session) => request<TodayStatus>("/posts/today/status", {}, session),
-  createPost: (session: Session, data: FormData) => request<Post>("/posts", { method: "POST", body: data }, session),
+  createPost: (session: Session, data: FormData, onProgress: (percent: number) => void = () => undefined, signal?: AbortSignal) => uploadPost(session, data, onProgress, signal),
   cancelPost: (session: Session, id: string) => request<void>(`/posts/${id}`, { method: "DELETE" }, session),
+  developmentClock: (session: Session) => request<DevelopmentClock>("/development/clock", {}, session),
+  setDevelopmentClock: (session: Session, utcNow: string) => request<DevelopmentClock>("/development/clock", { method: "PUT", body: JSON.stringify({ utcNow }) }, session),
+  resetDevelopmentClock: (session: Session) => request<DevelopmentClock>("/development/clock", { method: "DELETE" }, session),
 };
