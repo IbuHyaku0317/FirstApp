@@ -1,0 +1,40 @@
+{
+  "expo": {
+    "name": "One Year Memory",
+    "slug": "one-year-memory",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "package": "com.ibuhyaku.oneyearmemory",
+      "permissions": [
+        "CAMERA"
+      ],
+      "adaptiveIcon": {
+        "backgroundColor": "#E6F4FE",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-secure-store",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "一年後の思い出として保存する写真や動画を選択するために使用します。",
+          "cameraPermission": "一年後の思い出として保存する写真を撮影するために使用します。",
+          "microphonePermission": false
+        }
+      ]
+    ]
+  }
+}

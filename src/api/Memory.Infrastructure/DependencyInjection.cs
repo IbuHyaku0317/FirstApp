@@ -14,6 +14,7 @@ public static class DependencyInjection
         services.AddDbContext<MemoryDbContext>(options => options.UseNpgsql(configuration.GetConnectionString("Database")));
         services.AddScoped<MemoryRepository>();
         services.AddScoped<IUserRepository>(provider => provider.GetRequiredService<MemoryRepository>());
+        services.AddScoped<IAnniversaryRepository>(provider => provider.GetRequiredService<MemoryRepository>());
         services.AddScoped<IPostRepository>(provider => provider.GetRequiredService<MemoryRepository>());
         services.AddScoped<IUnitOfWork>(provider => provider.GetRequiredService<MemoryRepository>());
         services.AddScoped<IPasswordService, PasswordService>();

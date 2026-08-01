@@ -4,5 +4,8 @@ namespace Memory.Application;
 
 public static class DependencyInjection
 {
-    public static IServiceCollection AddApplication(this IServiceCollection services) => services.AddScoped<AuthApplicationService>().AddScoped<PostApplicationService>();
+    public static IServiceCollection AddApplication(this IServiceCollection services) => services
+        .AddScoped<AuthApplicationService>()
+        .AddScoped<AnniversaryApplicationService>()
+        .AddScoped<PostApplicationService>();
 }
