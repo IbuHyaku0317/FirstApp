@@ -292,3 +292,4 @@ RFC 9457 Problem Detailsを使用する。
 - TestcontainersでテストごとにPostgreSQLコンテナを用意し、EF Core Migrationを適用する。
 - 認証、multipartメディア投稿、通常日の投稿上限、取消による枠の復元、一年後の解禁を検証する。
 - メディア保存先にはテスト専用一時ディレクトリを使い、テスト終了時に削除する。
+- `GET /posts/today/status` は `serverNow` を返し、モバイル側が端末時計との差を補正できるようにする。最終的な取消可否は引き続きAPIが判定する。

@@ -29,4 +29,4 @@ export type Post = {
   media: Media[];
 };
 export type CalendarDay = { date: string; count: number };
-export type TodayStatus = { occurredOn: string; used: number; limit: number; isAnniversary: boolean; cancelablePosts: Post[] };
+export type TodayStatus = { occurredOn: string; used: number; limit: number; isAnniversary: boolean; serverNow: string; cancelablePosts: Post[] };

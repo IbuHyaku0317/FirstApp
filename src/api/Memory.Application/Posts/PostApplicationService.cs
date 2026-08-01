@@ -48,7 +48,7 @@ public sealed class PostApplicationService(IPostRepository posts, IUserRepositor
         {
             if (post.CanCancel(now)) cancelable.Add(await MapAsync(post, true, ct));
         }
-        return new(today, await posts.CountOnAsync(userId, today, ct), isAnniversary ? 2 : 1, isAnniversary, cancelable);
+        return new(today, await posts.CountOnAsync(userId, today, ct), isAnniversary ? 2 : 1, isAnniversary, now, cancelable);
     }
 
     public async Task<PageDto<PostDto>> ListAsync(Guid userId, int limit, string? cursor, CancellationToken ct)

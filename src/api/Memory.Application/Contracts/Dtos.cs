@@ -9,7 +9,7 @@ public sealed record MediaDto(Guid Id, string Kind, string ContentType, long Byt
 public sealed record PostDto(Guid Id, string? Caption, DateOnly OccurredOn, DateOnly UnlockOn, int DailySequence, DateTimeOffset CreatedAt, DateTimeOffset CancelableUntil, IReadOnlyList<MediaDto> Media);
 public sealed record PageDto<T>(IReadOnlyList<T> Items, string? NextCursor);
 public sealed record CalendarDayDto(DateOnly Date, int Count);
-public sealed record TodayStatusDto(DateOnly OccurredOn, int Used, int Limit, bool IsAnniversary, IReadOnlyList<PostDto> CancelablePosts);
+public sealed record TodayStatusDto(DateOnly OccurredOn, int Used, int Limit, bool IsAnniversary, DateTimeOffset ServerNow, IReadOnlyList<PostDto> CancelablePosts);
 public sealed record CreatePostCommand(Guid UserId, string? Caption, Stream Content, string ContentType, string Extension);
 
 public sealed class BusinessRuleException(string code, string message) : Exception(message)

@@ -23,10 +23,16 @@ export function ProfileScreen({ session, onSessionChange }: { session: Session; 
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [nowMs, setNowMs] = useState(Date.now());
+  const [serverClockOffsetMs, setServerClockOffsetMs] = useState(0);
   const ja = session.user.preferredLanguage === "ja";
   const anniversary = session.user.anniversary;
 
-  const loadStatus = () => api.todayStatus(session).then(setTodayStatus).catch(() => undefined);
+  const loadStatus = () => api.todayStatus(session).then(status => {
+    // 開発用時計を進めても10分表示が端末の実時間に引きずられないよう、API時刻との差を保持する。
+    setServerClockOffsetMs(new Date(status.serverNow).getTime() - Date.now());
+    setNowMs(Date.now());
+    setTodayStatus(status);
+  }).catch(() => undefined);
   useEffect(() => { void loadStatus(); }, [session]);
   useEffect(() => {
     if (!todayStatus?.cancelablePosts.length) return;
@@ -35,7 +41,7 @@ export function ProfileScreen({ session, onSessionChange }: { session: Session; 
   }, [todayStatus?.cancelablePosts.length]);
 
   const remainingTime = (until?: string) => {
-    const seconds = Math.max(0, Math.ceil((new Date(until ?? 0).getTime() - nowMs) / 1000));
+    const seconds = Math.max(0, Math.ceil((new Date(until ?? 0).getTime() - (nowMs + serverClockOffsetMs)) / 1000));
     return `${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
   };
 
