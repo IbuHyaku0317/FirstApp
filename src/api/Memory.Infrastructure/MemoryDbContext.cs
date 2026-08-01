@@ -12,10 +12,48 @@ public sealed class MemoryDbContext(DbContextOptions<MemoryDbContext> options) :
 
     protected override void OnModelCreating(ModelBuilder b)
     {
-        b.HasPostgresEnum<Membership>(); b.HasPostgresEnum<MediaKind>(); b.HasPostgresEnum<MediaStatus>();
-        b.Entity<User>(e => { e.ToTable("users"); e.HasKey(x => x.Id); e.HasIndex(x => x.NormalizedEmail).IsUnique(); e.Property(x => x.DisplayName).HasMaxLength(80); e.Property(x => x.Email).HasMaxLength(320); e.Property(x => x.NormalizedEmail).HasMaxLength(320); e.HasQueryFilter(x => x.DeletedAt == null); });
-        b.Entity<Post>(e => { e.ToTable("posts"); e.HasKey(x => x.Id); e.Property(x => x.Caption).HasMaxLength(2000); e.HasIndex(x => new { x.UserId, x.CreatedAt }); e.HasIndex(x => new { x.UserId, x.OccurredOn, x.CreatedAt }); e.HasQueryFilter(x => x.DeletedAt == null); });
-        b.Entity<MediaAsset>(e => { e.ToTable("media_assets"); e.HasKey(x => x.Id); e.HasIndex(x => x.StorageKey).IsUnique(); e.HasOne(x => x.Post).WithMany(x => x.Media).HasForeignKey(x => x.PostId).OnDelete(DeleteBehavior.Cascade); e.HasQueryFilter(x => x.Post.DeletedAt == null); });
-        b.Entity<RefreshToken>(e => { e.ToTable("refresh_tokens"); e.HasKey(x => x.Id); e.HasIndex(x => x.TokenHash).IsUnique(); });
+        b.HasPostgresEnum<Membership>();
+        b.HasPostgresEnum<MediaKind>();
+        b.HasPostgresEnum<MediaStatus>();
+
+        b.Entity<User>(entity =>
+        {
+            entity.ToTable("users");
+            entity.HasKey(user => user.Id);
+            entity.HasIndex(user => user.NormalizedEmail).IsUnique();
+            entity.Property(user => user.DisplayName).HasMaxLength(80);
+            entity.Property(user => user.Email).HasMaxLength(320);
+            entity.Property(user => user.NormalizedEmail).HasMaxLength(320);
+            entity.HasQueryFilter(user => user.DeletedAt == null);
+        });
+
+        b.Entity<Post>(entity =>
+        {
+            entity.ToTable("posts");
+            entity.HasKey(post => post.Id);
+            entity.Property(post => post.Caption).HasMaxLength(2000);
+            entity.HasIndex(post => new { post.UserId, post.CreatedAt });
+            entity.HasIndex(post => new { post.UserId, post.OccurredOn, post.CreatedAt });
+            entity.HasQueryFilter(post => post.DeletedAt == null);
+        });
+
+        b.Entity<MediaAsset>(entity =>
+        {
+            entity.ToTable("media_assets");
+            entity.HasKey(media => media.Id);
+            entity.HasIndex(media => media.StorageKey).IsUnique();
+            entity.HasOne(media => media.Post)
+                .WithMany(post => post.Media)
+                .HasForeignKey(media => media.PostId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasQueryFilter(media => media.Post.DeletedAt == null);
+        });
+
+        b.Entity<RefreshToken>(entity =>
+        {
+            entity.ToTable("refresh_tokens");
+            entity.HasKey(token => token.Id);
+            entity.HasIndex(token => token.TokenHash).IsUnique();
+        });
     }
 }

@@ -39,3 +39,36 @@ Webは `http://localhost:5173`、APIは `http://localhost:5080` です。Postgre
 - Reactの主要7画面とレスポンシブUI
 
 R2アダプター、画像シグネチャ検査、サムネイル生成、Outbox/孤立ファイル定期清掃、統合テストは次の実装段階です。
+
+## アーキテクチャ
+
+FEはAtomic Designで構成しています。
+
+```text
+src/web/src/
+  components/
+    atoms/        最小UI要素
+    molecules/    入力項目・状態表示などの組み合わせ
+    organisms/    ヘッダー・フォーム・投稿カード
+    templates/    ページ共通レイアウト
+  pages/          ルート単位の画面
+  providers/      セッションなどの横断状態
+  shared/         APIクライアントと共有型
+  app/            ルーティングとアプリケーション構成
+```
+
+BEはDDDを取り入れたOnion Architectureです。依存方向は常に内側を向きます。
+
+```text
+Memory.Api              HTTP・認証・エンドポイント（Presentation）
+    ↓
+Memory.Application      ユースケース・DTO・ポート
+    ↓
+Memory.Domain           集約・エンティティ・ドメインポリシー
+
+Memory.Infrastructure   EF Core・PostgreSQL・JWT・ストレージ
+    ↓
+Memory.Application / Memory.Domain
+```
+
+API層はEF Coreの `MemoryDbContext` を直接利用せず、Application層のユースケースを呼び出します。Infrastructure層はApplication層で定義したポートを実装します。
