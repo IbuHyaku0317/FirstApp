@@ -1,16 +1,20 @@
 {
   "expo": {
-    "name": "One Year Memory",
-    "slug": "one-year-memory",
+    "name": "一年後の自分へ",
+    "slug": "to-myself-in-1-year",
+    "scheme": "tomyselfin1year",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.ibuhyaku.tomyselfin1year",
+      "buildNumber": "1"
     },
     "android": {
-      "package": "com.ibuhyaku.oneyearmemory",
+      "package": "com.ibuhyaku.tomyselfin1year",
+      "versionCode": 1,
       "permissions": [
         "CAMERA"
       ],
@@ -32,6 +36,10 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "locales": {
+      "ja": "./locales/ja.json",
+      "en": "./locales/en.json"
     },
     "plugins": [
       "expo-secure-store",

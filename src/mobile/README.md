@@ -2,6 +2,11 @@
 
 Expo／React Nativeで構築したiOS・Android共通基盤のAndroid先行実装です。
 
+- 日本語名：一年後の自分へ
+- 英語名：To Myself in 1 Year
+- AndroidパッケージID：`com.ibuhyaku.tomyselfin1year`
+- URL scheme：`tomyselfin1year`
+
 ## 起動準備
 
 ```powershell

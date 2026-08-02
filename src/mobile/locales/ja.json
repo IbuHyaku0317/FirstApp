@@ -1,0 +1,8 @@
+{
+  "android": {
+    "app_name": "一年後の自分へ"
+  },
+  "ios": {
+    "CFBundleDisplayName": "一年後の自分へ"
+  }
+}

@@ -27,6 +27,18 @@
 - タブレットはレイアウト崩れを防ぐが、専用UI最適化は将来対応とする。
 - iOSとAndroidはReact Nativeの共通コードを基本とし、OS固有機能だけを分離する。
 
+### 3.1 正式なアプリ識別情報
+
+| 項目 | 設定値 |
+| --- | --- |
+| 日本語名 | 一年後の自分へ |
+| 英語名 | To Myself in 1 Year |
+| Android package ID | `com.ibuhyaku.tomyselfin1year` |
+| iOS bundle ID | `com.ibuhyaku.tomyselfin1year` |
+| URL scheme | `tomyselfin1year` |
+
+端末ホーム画面の表示名はOSの言語設定に合わせて日本語／英語を切り替える。`versionCode` と `buildNumber` はストアへ新しいビルドを提出するたびに増加させる。
+
 ## 4. 画面構成
 
 すべての画面のセーフエリア内右上に、日本語／英語の共通言語切り替えを常設する。

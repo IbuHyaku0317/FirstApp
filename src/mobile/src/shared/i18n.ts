@@ -2,7 +2,7 @@ export type Language = "ja" | "en";
 
 const messages = {
   ja: {
-    appName: "一年後の記憶",
+    appName: "一年後の自分へ",
     tagline: "今日をしまって、一年後にひらく。",
     signIn: "ログイン",
     signUp: "アカウント作成",
@@ -14,7 +14,7 @@ const messages = {
     profile: "プロフィール",
   },
   en: {
-    appName: "One Year Memory",
+    appName: "To Myself in 1 Year",
     tagline: "Keep today. Open it one year later.",
     signIn: "Sign in",
     signUp: "Create account",
