@@ -18,7 +18,11 @@ async function parseError(response: Response) {
 
 async function request<T>(path: string, init: RequestInit = {}, session?: Session, retry = true): Promise<T> {
   const headers = new Headers(init.headers);
-  headers.set("Accept-Language", session?.user.preferredLanguage ?? "ja");
+  // 認証前は画面で選択した言語を呼び出し元から指定できるようにする。
+  // 認証後はユーザー設定の言語を既定値として利用する。
+  if (!headers.has("Accept-Language")) {
+    headers.set("Accept-Language", session?.user.preferredLanguage ?? "ja");
+  }
   if (session?.accessToken) headers.set("Authorization", `Bearer ${session.accessToken}`);
   if (!(init.body instanceof FormData)) headers.set("Content-Type", "application/json");
   const response = await fetch(`${apiBaseUrl}${path}`, { ...init, headers });
@@ -76,8 +80,8 @@ function uploadPost(session: Session, data: FormData, onProgress: (percent: numb
 }
 
 export const api = {
-  register: (displayName: string, email: string, password: string, language: Language) => request<AuthResponse>("/auth/register", { method: "POST", body: JSON.stringify({ displayName, email, password, timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "Asia/Tokyo", preferredLanguage: language, device: `android` }) }),
-  login: (email: string, password: string) => request<AuthResponse>("/auth/login", { method: "POST", body: JSON.stringify({ email, password, device: "android" }) }),
+  register: (displayName: string, email: string, password: string, language: Language) => request<AuthResponse>("/auth/register", { method: "POST", headers: { "Accept-Language": language }, body: JSON.stringify({ displayName, email, password, timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "Asia/Tokyo", preferredLanguage: language, device: `android` }) }),
+  login: (email: string, password: string, language: Language) => request<AuthResponse>("/auth/login", { method: "POST", headers: { "Accept-Language": language }, body: JSON.stringify({ email, password, device: "android" }) }),
   me: (session: Session) => request<User>("/me", {}, session),
   updateProfile: (session: Session, body: { displayName: string; preferredLanguage: Language; timezone: string }) => request<User>("/me", { method: "PATCH", body: JSON.stringify(body) }, session),
   deleteAccount: (session: Session) => request<void>("/me", { method: "DELETE" }, session),

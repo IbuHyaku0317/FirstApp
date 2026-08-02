@@ -8,9 +8,8 @@ import { colors, spacing } from "../shared/theme";
 
 type AuthMode = "login" | "register" | "passwordReset";
 
-export function AuthScreen({ onAuthenticated }: { onAuthenticated: (session: Session) => void }) {
+export function AuthScreen({ language, onAuthenticated }: { language: Language; onAuthenticated: (session: Session) => void }) {
   const [mode, setMode] = useState<AuthMode>("login");
-  const [language, setLanguage] = useState<Language>("ja");
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -25,7 +24,7 @@ export function AuthScreen({ onAuthenticated }: { onAuthenticated: (session: Ses
     if (mode === "register" && !displayName.trim()) return setError(ja ? "表示名を入力してください。" : "Enter a display name.");
     setLoading(true);
     try {
-      const result = mode === "register" ? await api.register(displayName, email, password, language) : await api.login(email, password);
+      const result = mode === "register" ? await api.register(displayName, email, password, language) : await api.login(email, password, language);
       onAuthenticated({ ...result, user: { ...result.user, preferredLanguage: result.user.preferredLanguage ?? language, anniversarySetupCompleted: result.user.anniversarySetupCompleted ?? mode === "login" } });
     } catch (e) { setError(e instanceof Error ? e.message : "Error"); }
     finally { setLoading(false); }
@@ -33,7 +32,6 @@ export function AuthScreen({ onAuthenticated }: { onAuthenticated: (session: Ses
 
   return <KeyboardAvoidingView style={styles.fill} behavior={Platform.OS === "ios" ? "padding" : undefined}>
     <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-      <View style={styles.language}><Pressable onPress={() => setLanguage("ja")}><Text style={language === "ja" ? styles.selected : styles.link}>日本語</Text></Pressable><Text> / </Text><Pressable onPress={() => setLanguage("en")}><Text style={language === "en" ? styles.selected : styles.link}>English</Text></Pressable></View>
       <View style={styles.hero}><Text style={styles.mark}>◌</Text><Title>{t(language, "appName")}</Title><Body muted>{t(language, "tagline")}</Body></View>
       {mode === "passwordReset" ? <Card><Title>{ja ? "パスワード再設定" : "Reset password"}</Title><Field accessibilityLabel={t(language, "email")} placeholder={t(language, "email")} value={email} onChangeText={setEmail} autoCapitalize="none" keyboardType="email-address" /><Body muted>{ja ? "再設定メールの送信画面です。メール配信サービス接続後に送信機能が有効になります。" : "This screen will send password reset email after the email delivery service is connected."}</Body><Button label={ja ? "メール送信は準備中" : "Email delivery coming soon"} onPress={() => undefined} disabled /><Button secondary label={ja ? "ログインへ戻る" : "Back to sign in"} onPress={() => setMode("login")} /></Card> : <View style={styles.form}>
         {mode === "register" && <Field accessibilityLabel={t(language, "displayName")} placeholder={t(language, "displayName")} value={displayName} onChangeText={setDisplayName} maxLength={80} />}
@@ -48,4 +46,4 @@ export function AuthScreen({ onAuthenticated }: { onAuthenticated: (session: Ses
   </KeyboardAvoidingView>;
 }
 
-const styles = StyleSheet.create({ fill: { flex: 1 }, container: { flexGrow: 1, padding: spacing.lg, justifyContent: "center", gap: spacing.xl }, language: { position: "absolute", top: 18, right: 24, flexDirection: "row" }, selected: { color: colors.primary, fontWeight: "700" }, link: { color: colors.muted }, hero: { alignItems: "center", gap: spacing.sm }, mark: { fontSize: 64, color: colors.primary }, form: { gap: spacing.md }, error: { color: colors.danger, lineHeight: 20 }, forgot: { color: colors.primary, textAlign: "center", padding: spacing.sm } });
+const styles = StyleSheet.create({ fill: { flex: 1 }, container: { flexGrow: 1, padding: spacing.lg, justifyContent: "center", gap: spacing.xl }, hero: { alignItems: "center", gap: spacing.sm }, mark: { fontSize: 64, color: colors.primary }, form: { gap: spacing.md }, error: { color: colors.danger, lineHeight: 20 }, forgot: { color: colors.primary, textAlign: "center", padding: spacing.sm } });
