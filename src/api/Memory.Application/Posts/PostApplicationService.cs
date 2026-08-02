@@ -4,7 +4,7 @@ using Memory.Domain;
 namespace Memory.Application;
 
 /// <summary>投稿枠、解禁、取消、カレンダー表示を調整するユースケース。</summary>
-public sealed class PostApplicationService(IPostRepository posts, IUserRepository users, IAnniversaryRepository anniversaries, IUnitOfWork unitOfWork, IMediaStorage storage, IAppClock clock)
+public sealed class PostApplicationService(IPostRepository posts, IUserRepository users, IAnniversaryRepository anniversaries, IUnitOfWork unitOfWork, IMediaStorage storage, IAppClock clock, IDevelopmentFeatures developmentFeatures)
 {
     public async Task<PostDto> CreateAsync(CreatePostCommand command, CancellationToken ct)
     {
@@ -18,7 +18,8 @@ public sealed class PostApplicationService(IPostRepository posts, IUserRepositor
         if (used >= limit) throw new BusinessRuleException("POST_DAILY_LIMIT_REACHED", "No more posts can be created today.");
 
         var kind = command.ContentType.StartsWith("video/", StringComparison.OrdinalIgnoreCase) ? MediaKind.Video : MediaKind.Image;
-        if (kind == MediaKind.Video && user.Membership != Membership.Premium) throw new BusinessRuleException("PREMIUM_REQUIRED", "A premium membership is required for video posts.");
+        if (kind == MediaKind.Video && user.Membership != Membership.Premium && !developmentFeatures.AllowFreeVideoPosts)
+            throw new BusinessRuleException("PREMIUM_REQUIRED", "A premium membership is required for video posts.");
 
         var stored = await storage.PutAsync(command.Content, command.ContentType, command.Extension, ct);
         try

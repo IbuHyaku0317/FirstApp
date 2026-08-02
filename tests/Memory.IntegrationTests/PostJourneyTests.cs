@@ -107,6 +107,35 @@ public sealed class PostJourneyTests : IAsyncLifetime
         replacement.EnsureSuccessStatusCode();
     }
 
+    [Fact]
+    public async Task Free_user_can_upload_video_only_because_api_runs_in_development()
+    {
+        var http = client!;
+        var email = $"development-video-{Guid.NewGuid():N}@example.com";
+        using var register = await http.PostAsJsonAsync("/api/v1/auth/register", new
+        {
+            displayName = "Development video user",
+            email,
+            password = "password-12345",
+            timezone = "Asia/Tokyo",
+            preferredLanguage = "en",
+        });
+        register.EnsureSuccessStatusCode();
+        var auth = await register.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal("free", auth.GetProperty("user").GetProperty("membership").GetString());
+        http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", auth.GetProperty("accessToken").GetString());
+
+        using var form = new MultipartFormDataContent();
+        var video = new ByteArrayContent(CreateTenSecondMp4());
+        video.Headers.ContentType = new MediaTypeHeaderValue("video/mp4");
+        form.Add(video, "media", "development-test.mp4");
+
+        using var create = await http.PostAsync("/api/v1/posts", form);
+        create.EnsureSuccessStatusCode();
+        var post = await create.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal("video", post.GetProperty("media")[0].GetProperty("kind").GetString());
+    }
+
     private static Task<HttpResponseMessage> CreatePhotoAsync(HttpClient http)
     {
         var form = new MultipartFormDataContent();
@@ -115,4 +144,18 @@ public sealed class PostJourneyTests : IAsyncLifetime
         form.Add(image, "media", "memory.jpg");
         return http.PostAsync("/api/v1/posts", form);
     }
+
+    private static byte[] CreateTenSecondMp4() =>
+    [
+        // ftyp box
+        0x00, 0x00, 0x00, 0x18, 0x66, 0x74, 0x79, 0x70,
+        0x69, 0x73, 0x6F, 0x6D, 0x00, 0x00, 0x00, 0x00,
+        0x69, 0x73, 0x6F, 0x6D, 0x6D, 0x70, 0x34, 0x31,
+        // moov box containing a version-0 mvhd box (timescale 1000, duration 10000 = 10 seconds)
+        0x00, 0x00, 0x00, 0x24, 0x6D, 0x6F, 0x6F, 0x76,
+        0x00, 0x00, 0x00, 0x1C, 0x6D, 0x76, 0x68, 0x64,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03, 0xE8,
+        0x00, 0x00, 0x27, 0x10,
+    ];
 }

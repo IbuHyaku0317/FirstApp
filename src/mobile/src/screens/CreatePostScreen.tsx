@@ -180,15 +180,25 @@ export function CreatePostScreen({ session, onCreated, onOpenSubscription }: Pro
             disabled={mediaSelectionDisabled}
           />
         ) : (
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={ja ? "動画を選ぶ、Premium限定" : "Choose a video, Premium only"}
-            disabled={loading}
-            onPress={showPremiumDialog}
-            style={({ pressed }) => [styles.lockedVideoButton, pressed && styles.pressed, loading && styles.disabled]}
-          >
-            <Text style={styles.lockedVideoText}>{ja ? "🔒 動画を選ぶ（Premium限定）" : "🔒 Choose a video (Premium only)"}</Text>
-          </Pressable>
+          <>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={ja ? "動画を選ぶ、Premium限定" : "Choose a video, Premium only"}
+              disabled={loading}
+              onPress={showPremiumDialog}
+              style={({ pressed }) => [styles.lockedVideoButton, pressed && styles.pressed, loading && styles.disabled]}
+            >
+              <Text style={styles.lockedVideoText}>{ja ? "🔒 動画を選ぶ（Premium限定）" : "🔒 Choose a video (Premium only)"}</Text>
+            </Pressable>
+            {__DEV__ && (
+              <Button
+                secondary
+                label={ja ? "🧪 開発用：動画を選ぶ" : "🧪 Development: choose a video"}
+                onPress={() => chooseMedia("videos")}
+                disabled={mediaSelectionDisabled}
+              />
+            )}
+          </>
         )}
 
         <Field

@@ -21,6 +21,7 @@ public static class DependencyInjection
         services.AddScoped<ITokenService, JwtTokenService>();
         services.AddScoped<IMediaStorage, LocalMediaStorage>();
         services.AddSingleton<IAppClock>(new AppClock(isDevelopment));
+        services.AddSingleton<IDevelopmentFeatures>(new DevelopmentFeatures(isDevelopment));
         return services;
     }
 }

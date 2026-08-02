@@ -36,6 +36,11 @@ public interface IAppClock
     bool IsAdjustable { get; }
     void SetUtcNow(DateTimeOffset? utcNow);
 }
+public interface IDevelopmentFeatures
+{
+    /// <summary>無料会員による動画投稿を、開発時の動作確認に限って許可する。</summary>
+    bool AllowFreeVideoPosts { get; }
+}
 public interface IPasswordService { string Hash(User user, string password); bool Verify(User user, string password); }
 public interface ITokenService
 {

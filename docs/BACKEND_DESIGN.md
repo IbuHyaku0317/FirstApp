@@ -285,6 +285,8 @@ RFC 9457 Problem Detailsを使用する。
 - Development環境だけ `/api/v1/development/clock` を公開し、認証済みユーザーだけが取得・設定・リセットできる。
 - Production環境では開発用エンドポイントをルーティングせず、時計の変更もInfrastructure層で拒否する。
 - 設定した時計は指定時刻で停止せず、設定後の実経過時間に合わせて進む。
+- 課金接続前の動画投稿テスト用に `IDevelopmentFeatures.AllowFreeVideoPosts` を設け、Development環境だけ無料会員の動画投稿を許可する。
+- この開発用許可は会員データやJWTの会員クレームを書き換えず、Production環境ではInfrastructure層から必ず `false` を供給する。
 
 ## 16. API統合テスト
 

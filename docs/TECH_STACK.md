@@ -221,3 +221,4 @@ WindowsではAndroid開発は可能だが、iOSのローカルネイティブビ
 | 一時PostgreSQL | Testcontainers.PostgreSql | MigrationとPostgreSQL依存クエリを実環境相当で検証 |
 
 開発用時計はアプリケーション独自の時刻抽象化として実装し、外部の日時ライブラリは追加しない。本番APIとJWTの時刻を変更できないことを構成とコードの両方で保証する。
+無料会員での動画動作確認も環境フラグとして実装し、DevelopmentビルドとDevelopment APIの組み合わせでのみ有効にする。会員データそのものは変更しない。
