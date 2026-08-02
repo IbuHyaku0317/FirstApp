@@ -167,7 +167,7 @@ anniversary_settings
 | provider_product_id | varchar(100) | YES | ストア商品ID |
 | provider_base_plan_id | varchar(100) | YES | ベースプランID。該当するストアのみ |
 | billing_period | varchar(20) | YES | `monthly`, `annual`。ストア検証結果を正とする |
-| status | varchar(30) | NO | `active`, `grace_period`, `account_hold`, `paused`, `expired`, `revoked` |
+| status | varchar(30) | NO | `pending`, `active`, `canceled`, `grace_period`, `account_hold`, `paused`, `expired`, `revoked` |
 | auto_renewing | boolean | NO | 自動更新予定の有無。解約予約後も期間終了までは権限を維持 |
 | current_period_start | timestamptz | YES | 現在支払期間開始 |
 | current_period_end | timestamptz | YES | 現在期間終了 |
@@ -182,6 +182,11 @@ anniversary_settings
 - `ix_subscription_verification (status, last_verified_at)`
 
 同一ユーザーに複数の購入履歴が存在し得る。現在の権限は、ストア検証済み状態と有効期間からApplication層で決定し、クライアント値や単純な行の存在だけでは判定しない。
+
+- `active`、`grace_period`、または `current_period_end` 前の `canceled` はPremium権限ありとする。
+- `pending`、`account_hold`、`paused`、`expired`、`revoked` はPremium権限なしとする。
+- `revoked` は `current_period_end` より優先して即時失効させる。
+- 購読失効時に `posts` や `media_objects` を削除・非表示化しない。既存投稿の解禁と閲覧可否は投稿側の状態だけで判定する。
 
 ### 4.7 device_installations
 

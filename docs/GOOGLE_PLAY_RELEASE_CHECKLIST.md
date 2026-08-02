@@ -69,9 +69,9 @@ Google Payではなく、Google Playでのアプリ公開とGoogle Play Billing�
 - [x] アンケートでは申込み、見積り、契約、決済、振込先情報、写真・動画アップロードを扱わない。`共同`
 - [x] アンケート回答の有無はPremiumや通常機能に影響せず、アプリのユーザーID・メール・トークンをフォームへ自動送信しない。`共同`
 - [ ] Googleフォームの説明文、設問、任意連絡先の利用目的・同意、プライバシー案内を確定する。`共同`
-- [ ] 解約後も既存の写真・動画を閲覧できる方針を確定する。`ユーザー`
-- [ ] 解約後は有効期間終了までPremium権限を維持する方針を確定する。`ユーザー`
-- [ ] 猶予期間、支払い保留、停止、期限切れ、返金時の権限を決める。`共同`
+- [x] 解約・失効後も既存の写真・動画を保持し、通常どおり1年後に解禁して閲覧できる方針を確定した。`共同`
+- [x] 自動更新の解約後も、支払済み有効期間の終了まではPremium権限を維持する方針を確定した。`共同`
+- [x] 猶予期間は動画投稿を許可し、支払い保留・一時停止・期限切れでは停止する。返金・購入取消は即時停止する方針を確定した。`共同`
 - [ ] 価格、請求周期、自動更新、解約方法を購入前画面に明示する。`Codex`
 
 ## 4. Play Consoleアカウント
@@ -251,6 +251,9 @@ Premiumは初回公開へ含めるため、本章をすべて必須とする。
 - [ ] 通知の重複を冪等に処理する。`Codex`
 - [ ] 更新、解約、猶予期間、保留、停止、期限切れ、返金を同期する。`Codex`
 - [ ] 月額・年額とも、有効期間中だけ同じ動画投稿権限を付与する。`Codex`
+- [ ] 自動更新解約後も有効期限までは権限を維持し、猶予期間中も動画投稿を許可する。`Codex`
+- [ ] 支払い保留、一時停止、期限切れ、返金・購入取消では新しい動画投稿を停止する。`Codex`
+- [ ] Premium失効後も既存の写真・動画を保持し、予定どおり解禁・閲覧できることを確認する。`Codex`
 - [ ] 購入復元を提供する。`Codex`
 - [ ] Google Playのサブスクリプション管理画面への導線を用意する。`Codex`
 - [ ] ライセンステスターで購入・解約・再購入を確認する。`共同`
@@ -429,5 +432,7 @@ Premiumは初回公開へ含めるため、本章をすべて必須とする。
 - [Play Billingのアプリ実装](https://developer.android.com/google/play/billing/integrate)
 - [Play Billingのバックエンド連携](https://developer.android.com/google/play/billing/backend)
 - [Google Playのサブスクリプション構成](https://support.google.com/googleplay/android-developer/answer/12154973)
+- [Google Playのサブスクリプションライフサイクル](https://developer.android.com/google/play/billing/lifecycle/subscriptions)
+- [Google Play Developer APIの購読状態](https://developers.google.com/android-publisher/api-ref/rest/v3/purchases.subscriptionsv2)
 - [Google Playのサブスクリプションポリシー](https://support.google.com/googleplay/android-developer/answer/9900533)
 - [コンテンツレーティング](https://support.google.com/googleplay/android-developer/answer/9859655)
