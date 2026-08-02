@@ -1,6 +1,7 @@
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { AuthenticatedImage } from "../components/AuthenticatedImage";
 import { Body, Card, Title } from "../components/atoms";
+import { MediaSaveButton } from "../components/MediaSaveButton";
 import { VideoMemory } from "../components/VideoMemory";
 import { Session } from "../shared/session";
 import { colors, spacing } from "../shared/theme";
@@ -53,6 +54,10 @@ export function MemoryDetailScreen({ session, post, onBack }: Props) {
         {media?.kind === "video" && <VideoMemory url={media.url} session={session} />}
         {!media && <Body muted>{ja ? "メディアがありません。" : "No media available."}</Body>}
       </Card>
+
+      {media && (
+        <MediaSaveButton ja={ja} media={media} postId={post.id} session={session} />
+      )}
 
       <Card>
         <Text style={styles.section}>{ja ? "メッセージ" : "Message"}</Text>

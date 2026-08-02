@@ -128,6 +128,8 @@ Expo Goだけを本番前提にせず、課金・通知・実機権限を含む�
 
 WindowsではAndroid開発は可能だが、iOSのローカルネイティブビルドにはmacOSが必要である。Windows中心で開発する場合は、EAS BuildのmacOSビルダーまたはCI用Macを利用する。
 
+ローカルのモバイルアプリは、Metroのbundle URLから開発PCのホスト名を取得してAPIへ接続する。これによりAndroid Emulatorでは `10.0.2.2`、同一LAN上の実機ではPCのLAN IPを自動的に使用する。接続先を固定する場合は `EXPO_PUBLIC_API_URL` で明示的に上書きする。
+
 ### Docker Compose
 
 初期構成：

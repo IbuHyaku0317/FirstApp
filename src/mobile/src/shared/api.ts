@@ -1,9 +1,35 @@
-import { Platform } from "react-native";
+import Constants from "expo-constants";
+import { NativeModules, Platform } from "react-native";
 import { Language } from "./i18n";
 import { Anniversary, CalendarDay, Post, TodayStatus, User } from "./types";
 import { Session, sessionStore } from "./session";
 
-const fallbackHost = Platform.OS === "android" ? "10.0.2.2" : "127.0.0.1";
+/**
+ * 開発中はMetroの配信元とAPIを起動しているPCが同じため、bundle URLから
+ * PCのアドレスを取得する。これにより実機とエミュレーターを設定変更なしで切り替えられる。
+ */
+function developmentHost() {
+  const hostUri = Constants.expoConfig?.hostUri;
+  if (hostUri) {
+    try {
+      const normalizedHostUri = hostUri.includes("://") ? hostUri : `http://${hostUri}`;
+      return new URL(normalizedHostUri).hostname;
+    } catch {
+      // 古いExpo GoではhostUriが取得できない場合があるため、bundle URLも確認する。
+    }
+  }
+
+  const scriptUrl = NativeModules.SourceCode?.scriptURL;
+  if (typeof scriptUrl !== "string" || !scriptUrl.startsWith("http")) return null;
+
+  try {
+    return new URL(scriptUrl).hostname;
+  } catch {
+    return null;
+  }
+}
+
+const fallbackHost = developmentHost() ?? (Platform.OS === "android" ? "10.0.2.2" : "127.0.0.1");
 export const apiBaseUrl = process.env.EXPO_PUBLIC_API_URL ?? `http://${fallbackHost}:5080/api/v1`;
 export const resolveMediaUrl = (url: string) => url.startsWith("http") ? url : `${apiBaseUrl.replace(/\/api\/v1$/, "")}${url}`;
 
