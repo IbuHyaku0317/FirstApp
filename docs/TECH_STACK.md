@@ -7,6 +7,14 @@
 
 ## 2. 全体構成
 
+アプリ識別情報は次のとおりとする。
+
+- 日本語名：`一年後の自分へ`
+- 英語名：`To Myself in 1 Year`
+- Android Application ID／iOS Bundle ID：`com.ibuhyaku.tomyselfin1year`
+- 初回公開地域：日本
+- 対応言語：日本語、英語
+
 | 領域 | 採用技術 | 用途 |
 | --- | --- | --- |
 | Mobile | React Native＋Expo＋TypeScript | iOS／Android共通アプリ |
@@ -20,6 +28,8 @@
 | ORM | Entity Framework Core | PostgreSQLアクセス、Migration |
 | Database | PostgreSQL | 永続データ |
 | Media Storage | Cloudflare R2 | 非公開の写真・動画保存 |
+| Memory Video Renderer | `IMemoryVideoRenderer`＋非同期ワーカー | 解禁済み投稿からメモリー動画を生成 |
+| Email | `IEmailSender`＋外部メール配信サービス | 認証、再設定、メモリー動画のダウンロード案内 |
 | Local Storage Adapter | ローカルファイル保存 | 開発環境用、`IMediaStorage` 実装 |
 | Cache／Job補助 | Redis（必要になった段階） | 分散ロック、ジョブ、レート制限 |
 | Push | Expo Notifications＋APNs／FCM | 解禁通知 |
@@ -72,6 +82,8 @@ Expo Goだけを本番前提にせず、課金・通知・実機権限を含む�
 - FluentValidation相当の入力検証（採用ライブラリは実装開始時に決定）
 - `IMediaStorage` によるローカル保存／Cloudflare R2切り替え
 - BackgroundServiceまたは外部ジョブ基盤による通知・クリーンアップ
+- `IMemoryVideoRenderer` による動画生成エンジンの抽象化
+- `IEmailSender` によるメール配信事業者の抽象化
 
 ## 5. 課金
 
@@ -81,7 +93,16 @@ Expo Goだけを本番前提にせず、課金・通知・実機権限を含む�
 - Stripeによるアプリ内デジタル機能の直接決済は初期モバイル版の前提にしない。
 - 無料／有料の判定はAPIが保持するSubscription状態を正とする。
 
-有料会員が利用できる初期機能は、最大60秒・100MBの動画投稿とする。価格、無料体験、返金時の扱いは別途プロダクト／ストア審査方針で決定する。
+課金商品は次の2つとし、無料トライアルは提供しない。
+
+| 商品 | 日本価格 | 継続機能 |
+| --- | ---: | --- |
+| 月額Premium | 300円／月 | 最大60秒・100MBの動画投稿 |
+| 年額Premium | 3,000円／年 | 動画投稿、支払済み1年ごとのメモリー動画作成権 |
+
+月額と年額で権利が異なるため、ストアでは別商品として管理する。年額の作成権はストア取引単位でサーバーが冪等に記録し、解約予約後も支払済み期間に対応する権利を維持する。返金・購入取消では未生成の権利を無効化する。
+
+メモリー動画は端末上で生成せず、非同期ワーカーで生成する。対象投稿の抽出、レンダリング、R2への非公開保存、メール配信をジョブとして分離する。レンダラー、メール事業者、ジョブ基盤、完成動画の長さ・画質・保持期間は、年額3,000円での原価試算後に最終選定する。
 
 ## 6. メディア構成
 
@@ -96,6 +117,7 @@ Expo Goだけを本番前提にせず、課金・通知・実機権限を含む�
 - `IMediaStorage = R2MediaStorage`
 - Cloudflare R2の非公開バケットを利用
 - DBには `storage_key` だけを保存
+- 投稿メディアと生成済みメモリー動画はキー接頭辞またはバケットを分離し、別の保持規則を適用できるようにする。
 - 閲覧時はAPI認可後に短期署名URLを発行するか、APIからストリームする。
 - CORS、署名URL期限、Content-Type、Content-Dispositionを制限する。
 - ストレージライフサイクルだけで業務データを自動削除しない。
@@ -206,6 +228,6 @@ WindowsではAndroid開発は可能だが、iOSのローカルネイティブビ
 6. プッシュ通知
 7. App Store／Google Play課金検証
 8. 有料動画投稿
-9. ステージング実機試験とストア申請
-10. 共有機能は初期リリース後のTODOとして別途設計
-
+9. アルバム開始日・年額作成権・メモリー動画生成／メール配信
+10. ステージング実機試験とストア申請
+11. 共有機能は初期リリース後のTODOとして別途設計
