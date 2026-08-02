@@ -23,8 +23,6 @@ users
  ├─< anniversary_settings
  ├─< posts >─ media_objects
  ├─< subscriptions
- ├─1 memory_album_settings
- ├─< memory_video_entitlements ─0..1─ memory_videos >─ media_objects
  ├─< device_installations
  ├─< notification_deliveries
  └─< email_deliveries
@@ -32,8 +30,6 @@ users
 anniversary_settings
  └─< posts
 
-memory_videos
- └─< memory_video_items >─ posts
 ```
 
 ## 4. テーブル定義
@@ -123,7 +119,6 @@ memory_videos
 | storage_provider | varchar(30) | NO | `local`, `r2` |
 | storage_key | varchar(1024) | NO | 保存先内の不透明キー |
 | media_type | varchar(20) | NO | `image`, `video` |
-| purpose | varchar(30) | NO | `post_media`, `memory_video` |
 | content_type | varchar(100) | NO | 検証済みMIMEタイプ |
 | byte_size | bigint | NO | ファイルサイズ |
 | duration_seconds | numeric(8,3) | YES | 動画のみ。最大60秒 |
@@ -136,7 +131,7 @@ memory_videos
 
 - `uq_media_provider_key (storage_provider, storage_key)` UNIQUE
 - `ck_media_byte_size`：0より大きい
-- `ck_post_video_duration`：`purpose = 'post_media'` の動画は60秒以下
+- `ck_video_duration`：動画は60秒以下
 - `ix_media_cleanup (status, created_at)`
 
 ### 4.5 refresh_sessions
@@ -165,12 +160,13 @@ memory_videos
 | --- | --- | --- | --- |
 | id | uuid | NO | PK |
 | user_id | uuid | NO | FK → users.id |
-| plan | varchar(30) | NO | `premium_monthly`, `premium_annual`。有効行がなければFree |
+| plan | varchar(20) | NO | `premium`。有効行がなければFree |
 | provider | varchar(30) | YES | `apple_app_store`, `google_play` |
 | provider_customer_ref | varchar(255) | YES | プロバイダー側参照値 |
 | provider_subscription_ref | varchar(255) | YES | 購読参照値 |
 | provider_product_id | varchar(100) | YES | ストア商品ID |
 | provider_base_plan_id | varchar(100) | YES | ベースプランID。該当するストアのみ |
+| billing_period | varchar(20) | YES | `monthly`, `annual`。ストア検証結果を正とする |
 | status | varchar(30) | NO | `active`, `grace_period`, `account_hold`, `paused`, `expired`, `revoked` |
 | auto_renewing | boolean | NO | 自動更新予定の有無。解約予約後も期間終了までは権限を維持 |
 | current_period_start | timestamptz | YES | 現在支払期間開始 |
@@ -187,77 +183,7 @@ memory_videos
 
 同一ユーザーに複数の購入履歴が存在し得る。現在の権限は、ストア検証済み状態と有効期間からApplication層で決定し、クライアント値や単純な行の存在だけでは判定しない。
 
-### 4.7 memory_album_settings
-
-| カラム | 型 | NULL | 制約・説明 |
-| --- | --- | --- | --- |
-| id | uuid | NO | PK |
-| user_id | uuid | NO | FK → users.id、UNIQUE |
-| first_period_start_on | date | NO | ユーザーが決めた最初のアルバム開始日 |
-| locked_at | timestamptz | YES | 最初の対象期間開始後に設定し、以後の通常変更を禁止 |
-| created_at | timestamptz | NO | 作成日時 |
-| updated_at | timestamptz | NO | 更新日時 |
-
-制約・インデックス：
-
-- `uq_memory_album_user (user_id)` UNIQUE
-- 初回設定時に、ユーザー現地日付より前または年額購入日から1年を超える日付をApplication層で拒否する。
-
-### 4.8 memory_video_entitlements
-
-| カラム | 型 | NULL | 制約・説明 |
-| --- | --- | --- | --- |
-| id | uuid | NO | PK |
-| user_id | uuid | NO | FK → users.id |
-| subscription_id | uuid | NO | FK → subscriptions.id |
-| provider_transaction_ref | varchar(255) | NO | 年額の初回購入・更新取引を識別。冪等キー |
-| album_period_number | integer | YES | 1から始まる連番。開始日設定待ちはNULL |
-| source_start_on | date | YES | 対象期間開始、含む。開始日設定待ちはNULL |
-| source_end_on | date | YES | 対象期間終了、含まない。開始日設定待ちはNULL |
-| delivery_due_on | date | YES | 全対象投稿の解禁完了後の生成予定日。開始日設定待ちはNULL |
-| status | varchar(30) | NO | `awaiting_album_start`, `reserved`, `earned`, `queued`, `rendering`, `delivered`, `no_content`, `canceled`, `failed` |
-| earned_at | timestamptz | YES | 支払済み1年間の作成権確定日時 |
-| delivered_at | timestamptz | YES | メール配信完了日時 |
-| created_at | timestamptz | NO | 作成日時 |
-| updated_at | timestamptz | NO | 更新日時 |
-
-制約・インデックス：
-
-- `uq_memory_entitlement_transaction (subscription_id, provider_transaction_ref)` UNIQUE
-- `uq_memory_entitlement_period (user_id, album_period_number)` UNIQUE（NULLを除く）
-- `ck_memory_source_period`：3つの日付がすべてNULL、または `source_start_on < source_end_on < delivery_due_on`
-- `ix_memory_entitlement_due (status, delivery_due_on)`
-
-### 4.9 memory_videos
-
-| カラム | 型 | NULL | 制約・説明 |
-| --- | --- | --- | --- |
-| id | uuid | NO | PK |
-| entitlement_id | uuid | NO | FK → memory_video_entitlements.id、UNIQUE |
-| media_object_id | uuid | YES | FK → media_objects.id、UNIQUE。レンダリング完了まではNULL |
-| status | varchar(20) | NO | `queued`, `rendering`, `available`, `delete_pending`, `deleted`, `failed` |
-| duration_seconds | numeric(10,3) | YES | 完成動画の長さ |
-| generated_at | timestamptz | YES | 生成完了日時 |
-| download_available_until | timestamptz | YES | ダウンロード提供期限。保持方針確定後に設定 |
-| deleted_at | timestamptz | YES | 生成動画の削除完了日時 |
-
-### 4.10 memory_video_items
-
-生成時点で採用した投稿を固定し、再試行しても同じ内容・順序を使用する。
-
-| カラム | 型 | NULL | 制約・説明 |
-| --- | --- | --- | --- |
-| memory_video_id | uuid | NO | FK → memory_videos.id |
-| post_id | uuid | NO | FK → posts.id |
-| sequence | integer | NO | 動画内の順序 |
-| created_at | timestamptz | NO | スナップショット作成日時 |
-
-制約・インデックス：
-
-- `pk_memory_video_items (memory_video_id, post_id)` PRIMARY KEY
-- `uq_memory_video_sequence (memory_video_id, sequence)` UNIQUE
-
-### 4.11 device_installations
+### 4.7 device_installations
 
 | カラム | 型 | NULL | 制約・説明 |
 | --- | --- | --- | --- |
@@ -278,7 +204,7 @@ memory_videos
 - `uq_device_push_token (push_token)` UNIQUE
 - `ix_devices_user_active (user_id, revoked_at)`
 
-### 4.12 notification_deliveries
+### 4.8 notification_deliveries
 
 | カラム | 型 | NULL | 制約・説明 |
 | --- | --- | --- | --- |
@@ -299,16 +225,15 @@ memory_videos
 - 解禁通知は `(device_installation_id, post_id, notification_type)` を一意とする。
 - `ix_notification_pending (status, scheduled_at)`
 
-### 4.13 email_deliveries
+### 4.9 email_deliveries
 
-認証メール、再設定メール、メモリー動画完成・投稿なし通知の送信履歴を保持する。宛先メールアドレスの平文を監査ログへ残さず、送信時に認証済みの現在値を取得する。
+認証メールと再設定メールの送信履歴を保持する。宛先メールアドレスの平文を監査ログへ残さず、送信時に認証済みの現在値を取得する。
 
 | カラム | 型 | NULL | 制約・説明 |
 | --- | --- | --- | --- |
 | id | uuid | NO | PK |
 | user_id | uuid | NO | FK → users.id |
-| memory_video_entitlement_id | uuid | YES | FK → memory_video_entitlements.id |
-| email_type | varchar(40) | NO | `verify_email`, `password_reset`, `memory_video_ready`, `memory_video_no_content` |
+| email_type | varchar(40) | NO | `verify_email`, `password_reset` |
 | status | varchar(20) | NO | `pending`, `sent`, `failed`, `canceled` |
 | scheduled_at | timestamptz | NO | 送信予定 |
 | delivered_at | timestamptz | YES | 配信事業者受付日時 |
@@ -319,9 +244,9 @@ memory_videos
 制約・インデックス：
 
 - `ix_email_delivery_pending (status, scheduled_at)`
-- メモリー動画の初回案内は `(memory_video_entitlement_id, email_type)` を一意とし、ユーザー要求による再送は別の冪等キーで管理する。
+- 同一トークン・同一用途の重複送信を防ぐ冪等キーをApplication層で管理する。
 
-### 4.14 media_cleanup_jobs
+### 4.10 media_cleanup_jobs
 
 ストレージ保存後のDB失敗や削除失敗を回収する。
 
