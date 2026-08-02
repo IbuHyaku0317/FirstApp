@@ -2,6 +2,7 @@ import * as ImagePicker from "expo-image-picker";
 import { useEffect, useRef, useState } from "react";
 import { Alert, Image, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Body, Button, Card, Field, Title } from "../components/atoms";
+import { SelectedVideoPreview } from "../components/SelectedVideoPreview";
 import { api } from "../shared/api";
 import { Session } from "../shared/session";
 import { colors, spacing } from "../shared/theme";
@@ -151,8 +152,13 @@ export function CreatePostScreen({ session, onCreated, onOpenSubscription }: Pro
       <Card>
         {asset?.type === "image" && <Image source={{ uri: asset.uri }} style={styles.preview} />}
         {asset?.type === "video" && (
-          <View style={styles.video}>
-            <Text style={styles.videoText}>▶ {asset.fileName ?? (ja ? "選択した動画" : "Selected video")}</Text>
+          <View style={styles.videoPreview}>
+            <SelectedVideoPreview
+              key={asset.uri}
+              uri={asset.uri}
+              accessibilityLabel={ja ? "選択した動画のプレビュー" : "Preview of the selected video"}
+            />
+            <Body muted>{asset.fileName ?? (ja ? "選択した動画" : "Selected video")}</Body>
           </View>
         )}
         {asset && !loading && (
@@ -238,8 +244,7 @@ export function CreatePostScreen({ session, onCreated, onOpenSubscription }: Pro
 const styles = StyleSheet.create({
   container: { padding: spacing.lg, gap: spacing.lg },
   preview: { width: "100%", aspectRatio: 1, borderRadius: 14 },
-  video: { minHeight: 120, borderRadius: 14, backgroundColor: colors.primarySoft, alignItems: "center", justifyContent: "center" },
-  videoText: { color: colors.primary, fontWeight: "700" },
+  videoPreview: { gap: spacing.sm },
   lockedVideoButton: {
     minHeight: 50,
     paddingHorizontal: spacing.lg,

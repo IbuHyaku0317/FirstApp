@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { AuthenticatedImage } from "../components/AuthenticatedImage";
 import { Body, Card, Title } from "../components/atoms";
+import { VideoThumbnail } from "../components/VideoThumbnail";
 import { api } from "../shared/api";
 import { Session } from "../shared/session";
 import { colors, spacing } from "../shared/theme";
@@ -145,10 +146,12 @@ export function CalendarScreen({ session }: { session: Session }) {
                 <AuthenticatedImage url={media.url} session={session} style={styles.memoryImage} />
               )}
               {media?.kind === "video" && (
-                <View style={styles.videoPreview}>
-                  <Text style={styles.videoIcon}>▶</Text>
-                  <Text style={styles.videoLabel}>{ja ? "動画の思い出" : "Video memory"}</Text>
-                </View>
+                <VideoThumbnail
+                  url={media.url}
+                  session={session}
+                  accessibilityLabel={ja ? "動画の思い出のサムネイル" : "Video memory thumbnail"}
+                  errorText={ja ? "動画を読み込めませんでした" : "Video could not be loaded"}
+                />
               )}
               {!media && <Body muted>{ja ? "メディアがありません" : "No media"}</Body>}
             </Pressable>
@@ -184,9 +187,6 @@ const styles = StyleSheet.create({
   dot: { width: 7, height: 7, borderRadius: 4, backgroundColor: colors.primary },
   memoryPreview: { minHeight: 120, borderRadius: 14, overflow: "hidden" },
   memoryImage: { width: "100%", aspectRatio: 1, borderRadius: 14 },
-  videoPreview: { minHeight: 160, alignItems: "center", justifyContent: "center", backgroundColor: colors.primarySoft },
-  videoIcon: { color: colors.primary, fontSize: 42 },
-  videoLabel: { color: colors.primary, fontWeight: "700" },
   pressed: { opacity: 0.8 },
   error: { color: colors.danger },
 });
