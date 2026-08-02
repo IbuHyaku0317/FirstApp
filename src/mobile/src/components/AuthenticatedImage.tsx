@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import * as FileSystem from "expo-file-system/legacy";
-import { ActivityIndicator, Image, ImageStyle, StyleProp, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Image, ImageResizeMode, ImageStyle, StyleProp, StyleSheet, Text, View } from "react-native";
 import { resolveMediaUrl } from "../shared/api";
 import { Session } from "../shared/session";
 import { colors } from "../shared/theme";
@@ -9,7 +9,7 @@ import { colors } from "../shared/theme";
  * React NativeのImageはAndroid環境によって認証ヘッダーを転送しないことがあります。
  * そのため、認証付きでキャッシュ領域へダウンロードし、ローカルURIから表示します。
  */
-export function AuthenticatedImage({ url, session, style }: { url: string; session: Session; style?: StyleProp<ImageStyle> }) {
+export function AuthenticatedImage({ url, session, style, resizeMode = "cover" }: { url: string; session: Session; style?: StyleProp<ImageStyle>; resizeMode?: ImageResizeMode }) {
   const [source, setSource] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
 
@@ -34,7 +34,7 @@ export function AuthenticatedImage({ url, session, style }: { url: string; sessi
 
   if (failed) return <View style={[styles.placeholder, style]}><Text style={styles.error}>Image could not be loaded.</Text></View>;
   if (!source) return <View style={[styles.placeholder, style]}><ActivityIndicator color={colors.primary} /></View>;
-  return <Image source={{ uri: source }} style={style} resizeMode="cover" />;
+  return <Image source={{ uri: source }} style={style} resizeMode={resizeMode} />;
 }
 
 const styles = StyleSheet.create({
