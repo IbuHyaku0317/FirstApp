@@ -51,7 +51,7 @@ Google Payではなく、Google Playでのアプリ公開とGoogle Play Billing�
 - [x] 正式な日本語アプリ名を「一年後の自分へ」と決定した。`ユーザー`
 - [x] 正式な英語アプリ名を「To Myself in 1 Year」と決定した。`ユーザー`
 - [x] AndroidパッケージIDを `com.ibuhyaku.tomyselfin1year` と最終承認した。公開後は変更しない。`ユーザー`
-- [ ] Expo／Android設定のパッケージIDを `com.ibuhyaku.tomyselfin1year` へ変更し、旧IDが残っていないことを確認する。`Codex`
+- [x] Expo／Android設定のパッケージIDを `com.ibuhyaku.tomyselfin1year` へ変更し、旧IDが残っていないことを確認する。`Codex`
 - [x] 初回公開国・地域を日本だけに決定した。`ユーザー`
 - [x] 初回対応言語を日本語・英語で確定した。`ユーザー`
 - [x] 対象年齢を13歳以上に決定した。未成年者の購入条件と表示は別途確認する。`ユーザー・共同`
