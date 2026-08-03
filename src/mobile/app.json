@@ -1,0 +1,66 @@
+{
+  "expo": {
+    "name": "一年後の自分へ",
+    "slug": "to-myself-in-1-year",
+    "scheme": "tomyselfin1year",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.ibuhyaku.tomyselfin1year",
+      "buildNumber": "1"
+    },
+    "android": {
+      "package": "com.ibuhyaku.tomyselfin1year",
+      "versionCode": 1,
+      "permissions": [
+        "CAMERA"
+      ],
+      "blockedPermissions": [
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.READ_MEDIA_IMAGES",
+        "android.permission.READ_MEDIA_VIDEO",
+        "android.permission.READ_MEDIA_AUDIO",
+        "android.permission.READ_MEDIA_VISUAL_USER_SELECTED",
+        "android.permission.ACCESS_MEDIA_LOCATION"
+      ],
+      "adaptiveIcon": {
+        "backgroundColor": "#E6F4FE",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "locales": {
+      "ja": "./locales/ja.json",
+      "en": "./locales/en.json"
+    },
+    "plugins": [
+      "expo-secure-store",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "一年後の思い出として保存する写真や動画を選択するために使用します。",
+          "cameraPermission": "一年後の思い出として保存する写真を撮影するために使用します。",
+          "microphonePermission": false
+        }
+      ],
+      "expo-video",
+      [
+        "expo-media-library",
+        {
+          "photosPermission": false,
+          "savePhotosPermission": "思い出の写真や動画を端末へ保存するために使用します。",
+          "isAccessMediaLocationEnabled": false,
+          "granularPermissions": []
+        }
+      ]
+    ]
+  }
+}

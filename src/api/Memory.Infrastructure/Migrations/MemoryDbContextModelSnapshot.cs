@@ -25,6 +25,44 @@ namespace Memory.Infrastructure.Migrations
             NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "membership", new[] { "free", "premium" });
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("Memory.Domain.AnniversarySetting", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Day")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset>("EffectiveFrom")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("EffectiveTo")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Month")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId")
+                        .IsUnique()
+                        .HasFilter("\"EffectiveTo\" IS NULL");
+
+                    b.ToTable("anniversary_settings", (string)null);
+                });
+
             modelBuilder.Entity("Memory.Domain.MediaAsset", b =>
                 {
                     b.Property<Guid>("Id")
@@ -70,6 +108,12 @@ namespace Memory.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<Guid?>("AnniversarySettingId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CancelableUntil")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("Caption")
                         .HasMaxLength(2000)
                         .HasColumnType("character varying(2000)");
@@ -77,10 +121,19 @@ namespace Memory.Infrastructure.Migrations
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<int>("DailySequence")
+                        .HasColumnType("integer");
+
                     b.Property<DateTimeOffset?>("DeletedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<DateOnly>("OccurredOn")
+                        .HasColumnType("date");
+
+                    b.Property<string>("SuppressionReason")
+                        .HasColumnType("text");
+
+                    b.Property<DateOnly>("UnlockOn")
                         .HasColumnType("date");
 
                     b.Property<DateTimeOffset>("UpdatedAt")
@@ -91,9 +144,15 @@ namespace Memory.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("AnniversarySettingId");
+
                     b.HasIndex("UserId", "CreatedAt");
 
                     b.HasIndex("UserId", "OccurredOn", "CreatedAt");
+
+                    b.HasIndex("UserId", "OccurredOn", "DailySequence")
+                        .IsUnique()
+                        .HasFilter("\"DeletedAt\" IS NULL");
 
                     b.ToTable("posts", (string)null);
                 });
@@ -140,6 +199,9 @@ namespace Memory.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<bool>("AnniversarySetupCompleted")
+                        .HasColumnType("boolean");
+
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -156,6 +218,9 @@ namespace Memory.Infrastructure.Migrations
                         .HasMaxLength(320)
                         .HasColumnType("character varying(320)");
 
+                    b.Property<DateTimeOffset?>("LastAnniversaryChangedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<int>("Membership")
                         .HasColumnType("integer");
 
@@ -167,6 +232,11 @@ namespace Memory.Infrastructure.Migrations
                     b.Property<string>("PasswordHash")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<string>("PreferredLanguage")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
 
                     b.Property<string>("Timezone")
                         .IsRequired()
@@ -183,6 +253,15 @@ namespace Memory.Infrastructure.Migrations
                     b.ToTable("users", (string)null);
                 });
 
+            modelBuilder.Entity("Memory.Domain.AnniversarySetting", b =>
+                {
+                    b.HasOne("Memory.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Memory.Domain.MediaAsset", b =>
                 {
                     b.HasOne("Memory.Domain.Post", "Post")
@@ -196,11 +275,18 @@ namespace Memory.Infrastructure.Migrations
 
             modelBuilder.Entity("Memory.Domain.Post", b =>
                 {
+                    b.HasOne("Memory.Domain.AnniversarySetting", "AnniversarySetting")
+                        .WithMany()
+                        .HasForeignKey("AnniversarySettingId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("Memory.Domain.User", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("AnniversarySetting");
 
                     b.Navigation("User");
                 });

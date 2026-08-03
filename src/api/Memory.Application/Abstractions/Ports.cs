@@ -2,8 +2,6 @@ using Memory.Domain;
 
 namespace Memory.Application;
 
-// Application層が必要とする機能を「ポート」として定義する。
-// 実装はInfrastructure層に置き、ユースケースをDBや外部サービスから独立させる。
 public interface IUserRepository
 {
     Task<bool> EmailExistsAsync(string normalizedEmail, CancellationToken ct);
@@ -11,29 +9,45 @@ public interface IUserRepository
     Task<User?> FindByIdAsync(Guid id, CancellationToken ct);
     void Add(User user);
 }
+
+public interface IAnniversaryRepository
+{
+    Task<AnniversarySetting?> FindCurrentAsync(Guid userId, CancellationToken ct);
+    void Add(AnniversarySetting setting);
+}
+
 public interface IPostRepository
 {
     void Add(Post post);
     Task<Post?> FindOwnedAsync(Guid postId, Guid userId, CancellationToken ct);
-    Task<IReadOnlyList<Post>> ListAsync(Guid userId, int take, DateTimeOffset? beforeTime, Guid? beforeId, CancellationToken ct);
-    Task<IReadOnlyList<Post>> OnDateAsync(Guid userId, DateOnly date, CancellationToken ct);
-    Task<IReadOnlyList<CalendarDayDto>> CalendarAsync(Guid userId, DateOnly start, DateOnly end, CancellationToken ct);
-}
-public interface IUnitOfWork
-{
-    Task SaveChangesAsync(CancellationToken ct);
+    Task<int> CountOnAsync(Guid userId, DateOnly occurredOn, CancellationToken ct);
+    Task<IReadOnlyList<Post>> OnOccurredDateAsync(Guid userId, DateOnly date, CancellationToken ct);
+    Task<IReadOnlyList<Post>> ListAsync(Guid userId, DateOnly visibleOn, int take, DateTimeOffset? beforeTime, Guid? beforeId, CancellationToken ct);
+    Task<IReadOnlyList<Post>> OnUnlockDateAsync(Guid userId, DateOnly date, CancellationToken ct);
+    Task<IReadOnlyList<Post>> LockedSecondPostsAsync(Guid userId, Guid anniversarySettingId, DateOnly after, CancellationToken ct);
+    Task<bool> CanReadStorageKeyAsync(Guid userId, string storageKey, DateOnly visibleOn, DateTimeOffset now, CancellationToken ct);
+    Task<IReadOnlyList<CalendarDayDto>> CalendarAsync(Guid userId, DateOnly start, DateOnly end, DateOnly visibleOn, CancellationToken ct);
 }
 
-public interface IPasswordService
+public interface IUnitOfWork { Task SaveChangesAsync(CancellationToken ct); }
+public interface IAppClock
 {
-    string Hash(User user, string password);
-    bool Verify(User user, string password);
+    DateTimeOffset UtcNow { get; }
+    bool IsAdjustable { get; }
+    void SetUtcNow(DateTimeOffset? utcNow);
 }
+public interface IDevelopmentFeatures
+{
+    /// <summary>無料会員による動画投稿を、開発時の動作確認に限って許可する。</summary>
+    bool AllowFreeVideoPosts { get; }
+}
+public interface IPasswordService { string Hash(User user, string password); bool Verify(User user, string password); }
 public interface ITokenService
 {
     Task<AuthResult> IssueAsync(User user, string? device, CancellationToken ct);
     Task<AuthResult?> RotateAsync(string rawToken, CancellationToken ct);
     Task RevokeAsync(string rawToken, CancellationToken ct);
+    Task RevokeAllAsync(Guid userId, CancellationToken ct);
 }
 public interface IMediaStorage
 {

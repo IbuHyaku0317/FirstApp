@@ -6,6 +6,7 @@
     <Project Path="src/api/Memory.Api/Memory.Api.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/Memory.IntegrationTests/Memory.IntegrationTests.csproj" />
     <Project Path="tests/Memory.UnitTests/Memory.UnitTests.csproj" />
   </Folder>
 </Solution>

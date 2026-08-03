@@ -28,7 +28,13 @@ public sealed class LocalMediaStorage(IOptions<MediaOptions> options) : IMediaSt
         File.Delete(Resolve(key));
         return Task.CompletedTask;
     }
-    public Task<Uri> GetReadUriAsync(string key, TimeSpan lifetime, CancellationToken ct) => Task.FromResult(new Uri($"/api/v1/media/{Uri.EscapeDataString(key)}", UriKind.Relative));
+    public Task<Uri> GetReadUriAsync(string key, TimeSpan lifetime, CancellationToken ct)
+    {
+        // キー全体をエスケープすると区切りの '/' まで %2F になり、Catch-allルートで
+        // DB上のstorage_keyと一致しない。各パス要素だけを安全にエスケープする。
+        var escapedKey = string.Join('/', key.Split('/').Select(Uri.EscapeDataString));
+        return Task.FromResult(new Uri($"/api/v1/media/{escapedKey}", UriKind.Relative));
+    }
     private string Resolve(string key)
     {
         var relativePath = key.Replace('/', Path.DirectorySeparatorChar);
